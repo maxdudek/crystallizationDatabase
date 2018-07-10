@@ -6,7 +6,7 @@ from pdb_crystal_database import loadStructures, parseAllDetails, writeStructure
 
 UNKNOWN_LIST_FILE = "Input\\unknown_list.json"
 COMPOUND_DICTIONARY_FILE = "Input\\compound_dictionary.json"
-STRUCTURES_FILE = "structures.pkl"
+STRUCTURES_FILE = "Structures\\structures.pkl"
 STOP_WORDS_FILE = "Input\\stop_words.json"
 ERROR_LIST_FILE = "Input\\error_list.json"
 

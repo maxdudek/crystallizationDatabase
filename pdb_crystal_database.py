@@ -1,4 +1,4 @@
-import requests, sys, json, pickle, nltk, random, operator, traceback
+import requests, sys, json, pickle, nltk, random, operator, traceback, os
 import xml.etree.ElementTree as etree
 from nltk.corpus import stopwords
 from misc_functions import loadJson, writeJson, printList, fileToList, listToFile, getKey
@@ -16,8 +16,11 @@ LOWERCASE_REPLACEMENT_FILE = "Input\\replacementLowercase.json"
 SENSITIVE_REPLACEMENT_FILE = "Input\\replacementSensitive.json"
 MIXTURES_FILE = "Input\\mixture_compounds.json"
 
-STRUCTURES_FILE = "structures.pkl"
-SENSIBLE_STRUCTURES_FILE = "sensible_structures.pkl"
+STRUCTURES_FILE = "Structures\\structures.pkl"
+SENSIBLE_STRUCTURES_FILE = "Structures\\sensible_structures.pkl"
+
+if not os.path.exists("Output"):
+    os.makedirs("Output")
 
 # Output Files
 DETAILS_FILE = "Output\\details.txt"
@@ -40,7 +43,8 @@ try:
     EXTRA_STOP_WORDS = set(loadJson(STOP_WORDS_FILE))
     STOP_WORDS = set(stopwords.words("english")) - {'m', 'am'} | EXTRA_STOP_WORDS - {'m'}
 except FileNotFoundError as notFound:
-    pass
+    print(notFound)
+    print("ERROR: The file {} cannot be found. Verify that it is in the proper directory.".format(notFound.filename))
 
 # Compounds that contain numbers (eg jeffamine 600)
 NUMBERED_COMPOUNDS = ["jeffamine", "propoxylate"]
