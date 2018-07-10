@@ -1,0 +1,33 @@
+{
+    "SPG Buffer": {
+        "succinic acid": 1,
+        "sodium dihydrogen phosphate": 1,
+        "glycine": 1
+    },
+    "MMT Buffer": {
+      "malic acid": 1,
+      "MES": 1,
+      "tris": 1
+   },
+   "MIB Buffer": {
+      "sodium malonate": 1,
+      "imidazole": 1,
+      "boric acid": 1
+   },
+   "amino acids": {
+      "glutamatic acid": 0.2,
+      "alanine": 0.2,
+      "glycine": 0.2,
+      "lysine hydrochloride": 0.2,
+      "serine": 0.2
+   },
+   "tacsimate": {
+      "malonic acid": 1.83,
+      "ammonium citrate": 0.25,
+      "succinic acid": 0.12,
+      "malic acid": 0.3,
+      "sodium acetate": 0.4,
+      "sodium formate": 0.5,
+      "ammonium hydrogen tartrate": 0.16
+   }
+}
