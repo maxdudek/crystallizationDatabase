@@ -1,6 +1,5 @@
 import requests, sys, json, pickle, nltk, random, operator, traceback, os
 import xml.etree.ElementTree as etree
-from nltk.corpus import stopwords
 from misc_functions import loadJson, writeJson, printList, fileToList, listToFile, getKey
 from time import sleep
 from collections import OrderedDict
@@ -11,37 +10,37 @@ SMILES_DICTIONARY_FILE = "Input\\smiles_dictionary.json"
 WITHOUT_DETAILS_FILE = "Input\\pdbs_without_details.json"
 STOP_WORDS_FILE = "Input\\stop_words.json"
 UNKNOWN_LIST_FILE = "Input\\unknown_list.json"
-ERROR_LIST_FILE = "Input\\error_list.json"
 LOWERCASE_REPLACEMENT_FILE = "Input\\replacementLowercase.json"
 SENSITIVE_REPLACEMENT_FILE = "Input\\replacementSensitive.json"
 MIXTURES_FILE = "Input\\mixture_compounds.json"
 
-STRUCTURES_FILE = "Structures\\structures.pkl"
-SENSIBLE_STRUCTURES_FILE = "Structures\\sensible_structures.pkl"
+STRUCTURES_FILE = "Structures\\structures.pkl" # The database file. Must be place in proper location
+SENSIBLE_STRUCTURES_FILE = "Structures\\sensible_structures.pkl" # Output only, not required
 
 if not os.path.exists("Output"):
     os.makedirs("Output")
+if not os.path.exists("Structures"):
+    os.makedirs("Structures")
+
 
 # Output Files
 DETAILS_FILE = "Output\\details.txt"
 SENSIBLE_DETAILS_FILE = "Output\\sensible_details.txt"
-ERROR_DETAILS_FILE = "Output\\error_details.txt"
+UNKNOWN_DETAILS_FILE = "Output\\unknown_details.txt"
 COMPOUND_FREQUENCY_FILE = "Output\\compound_frequency.txt"
 UNKNOWN_FREQUENCY_FILE = "Output\\unknown_frequency.txt"
 PENDING_FREQUENCY_FILE = "Output\\pending_frequency.txt"
 
 # Load lists and dictionaries from files
-print("Loading dictionary files...")
+print("Loading input files...")
 try:
     unknownList = loadJson(UNKNOWN_LIST_FILE)
     compoundDictionary = loadJson(COMPOUND_DICTIONARY_FILE)
     smilesDictionary = loadJson(SMILES_DICTIONARY_FILE)
-    errorList = loadJson(ERROR_LIST_FILE)
     lowercaseReplacement = loadJson(LOWERCASE_REPLACEMENT_FILE, object_pairs_hook=OrderedDict)
     sensitiveReplacement = loadJson(SENSITIVE_REPLACEMENT_FILE, object_pairs_hook=OrderedDict)
     mixturesDictionary = loadJson(MIXTURES_FILE)
-    EXTRA_STOP_WORDS = set(loadJson(STOP_WORDS_FILE))
-    STOP_WORDS = set(stopwords.words("english")) - {'m', 'am'} | EXTRA_STOP_WORDS - {'m'}
+    STOP_WORDS = set(loadJson(STOP_WORDS_FILE)) - {'m'} - {'am'}
 except FileNotFoundError as notFound:
     print(notFound)
     print("ERROR: The file {} cannot be found. Verify that it is in the proper directory.".format(notFound.filename))
@@ -79,18 +78,23 @@ class Structure:
         Resolution: {6}
         """.format(self.pdbid, self.pmcid, self.compounds, self.pH, self.temperature, self.method, self.resolution))
 
-    def parseDetails(self, debug=False):
+    def parseDetails(self, detailsString=None, debug=False):
         """Parses the details string and returns a list of compounds, followed by concentration, or None if conc. is not found
         Format of compounds = ['compound name', '100', 'another compound name', '45%']
+        By default (if detailsString=None), the input will be self.details, but
+        detailsString can be set to another string instead
         If debug=True, then this function will print the words after every step
-        Also sets the compounds list
+        Also sets the compounds list of the structure
         Returns None if failed or if details are unavailible
         """
 
-        if self.details == None:
-            return None
+        if (detailsString==None):
+            details = self.details
+        else:
+            details = detailsString
 
-        details = self.details
+        if details == None:
+            return None
 
         if debug:
             print("Debugging PDB {}...\n".format(self.pdbid))
@@ -534,12 +538,6 @@ class Structure:
             if compound in unknownList:
                 return True
 
-    def hasError(self): # boolean
-        """Returns True if the structure has a compound in the errorList"""
-        for compound in self.compounds[::2]:
-            if compound in errorList:
-                return True
-
     def printError(self, errorMessage, errorObject):
         """Prints an error message regarding a certain structure.
         errorMessage is a string which describes when the error occrued
@@ -574,7 +572,7 @@ def standardizeAllNames(structureList): # void
     Also parses dictionary values which represent multiple compounds (e.g. acetic acid / sodium acetate)
     Also parses mixture compounds, which are mixtures of multiple compounds (e.g Molecular Dimensions Buffers)
     """
-    updateDictionary()
+    updateSmilesDictionary() # Also calls updateDictionary
     print("Standardizing chemical names...")
     for structure in structureList:
         try:
@@ -582,21 +580,18 @@ def standardizeAllNames(structureList): # void
         except Exception as e:
             structure.printError("Unable to standardize compound names", e)
 
-def updateSmilesDictionary(sensibleStructureList): # void
-    """Takes a list of SENSIBLE structures and adds newly
-    recognized compounds as blank keys to the SMILES dictionary"""
+def updateSmilesDictionary(): # void
+    """Adds newly recognized compounds in the compound dictionary as blank keys to the SMILES dictionary"""
     updateDictionary()
     print("Updating SMILES dictionary...")
-    for structure in sensibleStructureList:
-        for compound in structure.compounds[::2]:
-            if compound not in smilesDictionary and compound in compoundDictionary.values():
-                smilesDictionary[compound] = ""
+    for compound in set(compoundDictionary.values()):
+        if compound not in smilesDictionary:
+            smilesDictionary[compound] = ""
     writeJson(smilesDictionary, SMILES_DICTIONARY_FILE, indent=2, sort_keys=True)
 
 def getSensibleStructures(structureList):
     """Returns a list of structures that make sense
     That is, all of their compounds are found in the dictionary"""
-    standardizeAllNames(structureList)
     print("Searching for sensible structures...")
     sensibleStructures = []
     for structure in structureList:
@@ -611,33 +606,24 @@ def getSensibleStructures(structureList):
             sensibleStructures.append(structure)
     return sensibleStructures
 
-def exportSensibleStructures(structureList):
+def exportSensibleStructures(structureList, structureFile=SENSIBLE_STRUCTURES_FILE, detailsFIle=SENSIBLE_DETAILS_FILE):
     """Exports a list of sensible structures to a serialized pickle file
-    Also exports a details text file with only the sensible structures"""
+    Also returns the list of sensible structures from getSensibleStructures
+    Also exports the details of the sensible structures"""
     sensibleStructures = getSensibleStructures(structureList)
-    writeStructures(sensibleStructures, SENSIBLE_STRUCTURES_FILE)
+    writeStructures(sensibleStructures, structureFile)
     print("Retrieved {} sensible structures".format(len(sensibleStructures)))
 
-    outputList = []
-    print("Exporting structure details...")
-    for struc in sensibleStructures:
-        outputList.append(struc.details)
-        outputList.append(struc.compounds)
-    listToFile(outputList, SENSIBLE_DETAILS_FILE)
+    exportDetails(sensibleStructures, detailsFIle)
+    return sensibleStructures
 
-def exportErrors(structureList, outputFilename=ERROR_DETAILS_FILE, unknown=False):
-    """Exports the details of all structures with errors to a text file
-    If unknown is True, also export structures with unknown compounds"""
-    print("Exporting error details to \"{}\"...".format(outputFilename))
-    outputList = []
-    for structure in structureList:
-        if structure.hasError() or (unknown and structure.hasUnknown()):
-            outputList.append(structure.details)
-            outputList.append(structure.compounds)
-    listToFile(outputList, outputFilename)
+def getUnknowns(structureList):
+    """Takes a structure list, and returns a list of all structures which have an unknown compound"""
+    print("Finding unknown compounds...")
+    return [structure for structure in structureList if structure.hasUnknown()]
 
-def exportAllDetails(structureList, outputFilename=DETAILS_FILE):
-    """Exports the details of all structures to a text file"""
+def exportDetails(structureList, outputFilename=DETAILS_FILE):
+    """Exports the details of a list of structures to a text file"""
     print("Exporting details to \"{}\"...".format(outputFilename))
     outputList = []
     for structure in structureList:
@@ -693,6 +679,15 @@ def exportCompoundFrequencies(structureList, outputFilename, mode="recognized"):
         outputList.append("{:30s}: {:20d}".format(key, value))
     listToFile(outputList, outputFilename)
 
+def exportOutputFiles():
+    """Just a simple way to export all of the output files"""
+    exportSensibleStructures(structureList)
+    exportDetails(getUnknowns(structureList), UNKNOWN_DETAILS_FILE)
+    exportDetails(structureList, DETAILS_FILE)
+    exportCompoundFrequencies(structureList, COMPOUND_FREQUENCY_FILE)
+    exportCompoundFrequencies(structureList, UNKNOWN_FREQUENCY_FILE, mode="unknown")
+    exportCompoundFrequencies(structureList, PENDING_FREQUENCY_FILE, mode="pending")
+
 def updateDictionary():
     """Makes sure all values in the compound dictionary are also keys
     This prevents inconsistency in other functions which assume that this is the case"""
@@ -708,7 +703,7 @@ def getStructure(structureList, pdbid): # Structure
             return structure
     return None
 
-def isNumber(s):
+def isNumber(s): # Boolean
     try:
         float(s.replace(",",""))
         return True
@@ -718,7 +713,7 @@ def isNumber(s):
 def isConcentraton(s):
     return isNumber(s) or isPercent(s) # Boolean
 
-def isPercent(s):
+def isPercent(s): # Boolean
     if (s[-3:] == "w/v" or s[-3:] == "v/v") and "%" in s:
         return True
     elif len(s) > 1 and s[-1] == "%":
@@ -780,10 +775,15 @@ def loadPdb(pdbid): # ElementTree root
         + str(pdbid)+"\n-----------------------------------------------\n")
         return None
 
-def fetchStructures(pdbList, structureFile, onlyDetails=True): # list
+def fetchStructures(pdbList, structureFile=STRUCTURES_FILE, onlyDetails=True, ignorePdbsWithoutDetails=True, ignoreCompletedPdbs=True, saveFrequency=100): # list
     """Takes a list of pdbids and creates Structure objects for them, outputing them to structureFile
-    Also will read structureFile and ignore pdbs which have already been created
-    If onlyDetails is true the function will only output Structures that have crystallization details
+    If onlyDetails is True the function will only output Structures that have crystallization details
+    If ignoreCompletedPdbs is True, then the function will read the Structure file and ignore Pdbs which already
+        have Structures associated with them
+    If ignoreCompletedPdbs is False, then the function will recheck and update every structure in the structure file
+    If ignorePdbsWithoutDetails is True then the function will ignore Pdbs from WITHOUT_DETAILS_FILE
+    saveFrequency is the number of pdbs downloaded before the files are saved
+        increasing this number makes the script faster, but more unsaved data is lost when the script is exited
     """
     count = 1
     structureList = []
@@ -793,20 +793,29 @@ def fetchStructures(pdbList, structureFile, onlyDetails=True): # list
         print("Loading PDBs without details...")
         pdbsWithoutDetails = loadJson(WITHOUT_DETAILS_FILE)
     except:
-        print("File pdbs_without_details.json not found. One will be created.")
+        print("File {} not found. One will be created.".format(WITHOUT_DETAILS_FILE))
 
     completedPdbList = [] # List of Pdbs already turned into structures or without details
     try:
         structureList = loadStructures(structureFile)
-        for struc in structureList:
-            completedPdbList.append(struc.pdbid)
+        if ignoreCompletedPdbs:
+            for struc in structureList:
+                completedPdbList.append(struc.pdbid)
     except FileNotFoundError:
-        print("File {} not found. A new file will be created.".format(structureFile))
+        print("File {} not found. A new structure file will be created.".format(structureFile))
 
-    if onlyDetails:
-        completedPdbList.extend(pdbsWithoutDetails)
-    print("Removing completed pdbs...")
-    pdbList = [pdbid for pdbid in pdbList if pdbid not in completedPdbList]
+    ignoredPdbList = []
+
+    if ignorePdbsWithoutDetails:
+        ignoredPdbList.extend(pdbsWithoutDetails)
+    # If ignoreCompletedPdbs=False, then completedPdbList will be empty
+    ignoredPdbList.extend(completedPdbList)
+
+    print("Removing completed pdbs (May take a minute)...")
+    pdbList = [pdbid for pdbid in pdbList if pdbid not in ignoredPdbList]
+
+    if pdbList == []:
+        print("All PDBs have been ignored. No more PDBs need to be downloaded.")
 
     for pdbid in pdbList:
         if count % 100 == 0 or count == 1:
@@ -844,13 +853,28 @@ def fetchStructures(pdbList, structureFile, onlyDetails=True): # list
                 except ValueError:
                     resolution = None
                 structure = Structure(pdbid, pmcid, details, [], pH, temperature, method, sequences, resolution)
+                # If the pdb already has a structure in the list, update it
+                structureAlreadyInList = getStructure(structureList, structure.pdbid)
+                if structureAlreadyInList != None:
+                    structureList.remove(structureAlreadyInList)
                 structureList.append(structure)
-                if count % 100 == 0:
+                if count % saveFrequency == 0:
+                    # Save structures
                     writeStructures(structureList, structureFile)
 
     writeStructures(structureList, structureFile)
     print("Done fetching Structures")
     return structureList
+
+def getAllPdbs(filename=""): # list
+    """Returns a list of every pdbid in the PDB
+    # filename = an optional argument to also export the list as a json file"""
+    response = requests.get("https://www.rcsb.org/pdb/json/getCurrent").text
+    dictionary = json.loads(response)
+    allPdbs = dictionary["idList"]
+    if filename != "":
+        writeJson(allPdbs, filename)
+    return allPdbs
 
 def loadStructures(structureFile=STRUCTURES_FILE): # list
     """Returns a list of structures from the pickled structure file"""
@@ -867,13 +891,8 @@ def writeStructures(structureList, structureFile):
         sys.exit()
 
 if __name__ == "__main__":
-    structureList = loadStructures(STRUCTURES_FILE)
-    # parseAllDetails(structureList, searchString="),")
-    # exportSensibleStructures(structureList)
-    # updateSmilesDictionary(structureList)
-    # exportErrors(structureList, ERROR_DETAILS_FILE, unknown=True)
-    # exportAllDetails(structureList, DETAILS_FILE)
-    # exportCompoundFrequencies(structureList, COMPOUND_FREQUENCY_FILE)
-    # exportCompoundFrequencies(structureList, UNKNOWN_FREQUENCY_FILE, mode="unknown")
-    # exportCompoundFrequencies(structureList, PENDING_FREQUENCY_FILE, mode="pending")
+    structureList = loadStructures(STRUCTURES_FILE) # Must have a Structure File availible (see wiki)
+    parseAllDetails(structureList, searchString=None)
+    standardizeAllNames(structureList)
+    exportOutputFiles()
     # getStructure(structureList, "1B2W").parseDetails(debug=True)

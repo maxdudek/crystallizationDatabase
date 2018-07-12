@@ -8,13 +8,11 @@ UNKNOWN_LIST_FILE = "Input\\unknown_list.json"
 COMPOUND_DICTIONARY_FILE = "Input\\compound_dictionary.json"
 STRUCTURES_FILE = "Structures\\structures.pkl"
 STOP_WORDS_FILE = "Input\\stop_words.json"
-ERROR_LIST_FILE = "Input\\error_list.json"
 
 print("Loading dictionary files...")
 compoundDictionary = loadJson(COMPOUND_DICTIONARY_FILE)
 stopWords = loadJson(STOP_WORDS_FILE)
 unknownList = loadJson(UNKNOWN_LIST_FILE)
-errorList = loadJson(ERROR_LIST_FILE)
 structureList = loadStructures(STRUCTURES_FILE)
 
 # Define input options
@@ -23,14 +21,13 @@ INPUT_SAVE = "save" # Save files - currently done automatically after every chan
 INPUT_UNKNOWN = "unknown" # Add the compound to the unknownList
 INPUT_SAME = "=" # Add the compound to the dictionary exactly as it appears (e.g. "sodium chloride" --> "sodium chloride")
 INPUT_UNDO = "u" # Undo - NOTE: undo is unreliable and should only be used for single dictionary changes
-# To undo a mistake safely, EXIT THE SCRIPT and make the change in the text files directly
+# To undo a mistake safely, EXIT THE SCRIPT and make the change in the text/json files directly
 INPUT_IGNORE = "sw" # Add ALL WORDS in the compound to the list of stop words
 # ex. if the compound is "well plate", both "well" and "plate" are added to the list
 INPUT_ADD_STOP_WORD = "add" # Adds a single stop word to the stopWord list
 # ex. "add well" will append "well" to the stopWords list
 INPUT_PASS = "pass" # Skips the current compound, does nothing to it
 INPUT_REMOVE_STOP_WORDS = "rm" # removes stop words from the compound and reloads the prompt
-INPUT_ERROR = "error" # Adds the compound to the error list
 
 
 def getCompoundList(structureList, sortedByFrequency=True, getKey=False): # list
@@ -60,7 +57,6 @@ def saveFiles():
     """Saves all of the lists and dictionaries to their respective files"""
     writeJson(compoundDictionary, COMPOUND_DICTIONARY_FILE, indent=2)
     writeJson(unknownList, UNKNOWN_LIST_FILE, indent=2)
-    writeJson(errorList, ERROR_LIST_FILE, indent=2)
     writeJson(stopWords, STOP_WORDS_FILE, indent=2)
     print("Files saved")
 
@@ -76,7 +72,7 @@ def generateDictionary(compoundList): # dictionary
         if i < len(compoundList):
             compound = compoundList[i]
             compound = removeStopWords(compound, stopWords)
-            if getKey(compound) in compoundDictionary or getKey(compound) in unknownList or getKey(compound) in errorList:
+            if getKey(compound) in compoundDictionary or getKey(compound) in unknownList:
                 pass
             elif compound in [" ", "", "-", ":"]:
                 pass
@@ -109,9 +105,6 @@ def generateDictionary(compoundList): # dictionary
                                 stopWords.append(word)
                                 writeJson(stopWords, STOP_WORDS_FILE, indent=2)
                         history.append(i)
-                    elif inputText == INPUT_ERROR:
-                        errorList.append(getKey(compound))
-                        history.append(i)
                     elif inputText == INPUT_UNDO:
                         if history == []:
                             print("Unable to undo")
@@ -126,9 +119,6 @@ def generateDictionary(compoundList): # dictionary
                             elif oldNameKey in unknownList:
                                 del unknownList[index(oldNameKey)]
                                 print("Removed {} from unknownList".format(oldNameKey))
-                            elif oldNameKey in errorList:
-                                del errorList[index(oldNameKey)]
-                                print("Removed {} from errorList".format(oldNameKey))
                             saveFiles()
                             del history[-1]
                             i = oldIndex - 1
@@ -185,9 +175,6 @@ def generateDictionary(compoundList): # dictionary
                         elif oldNameKey in unknownList:
                             del unknownList[index(oldNameKey)]
                             print("Removed {} from unknownList".format(oldNameKey))
-                        elif oldNameKey in errorList:
-                            del errorList[index(oldNameKey)]
-                            print("Removed {} from errorList".format(oldNameKey))
                         saveFiles()
                         del history[-1]
                         i = oldIndex - 1
