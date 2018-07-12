@@ -14,6 +14,7 @@ compoundDictionary = loadJson(COMPOUND_DICTIONARY_FILE)
 stopWords = loadJson(STOP_WORDS_FILE)
 unknownList = loadJson(UNKNOWN_LIST_FILE)
 structureList = loadStructures(STRUCTURES_FILE)
+passList = [] # A temporary list to allow the user to temporarily skip a compound
 
 # Define input options
 INPUT_QUIT = "" # Exit the script
@@ -72,7 +73,7 @@ def generateDictionary(compoundList): # dictionary
         if i < len(compoundList):
             compound = compoundList[i]
             compound = removeStopWords(compound, stopWords)
-            if getKey(compound) in compoundDictionary or getKey(compound) in unknownList:
+            if getKey(compound) in compoundDictionary or getKey(compound) in unknownList or compound in passList:
                 pass
             elif compound in [" ", "", "-", ":"]:
                 pass
@@ -134,7 +135,7 @@ def generateDictionary(compoundList): # dictionary
                         compound = removeStopWords(compound, stopWords)
                         runAgain = True
                     elif inputText == INPUT_PASS:
-                        pass
+                        passList.append(compound)
                     else: # Normal input
                         nameOfCompound = inputText
                         if inputText == INPUT_SAME:

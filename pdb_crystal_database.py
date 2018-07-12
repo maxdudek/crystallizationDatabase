@@ -46,7 +46,7 @@ except FileNotFoundError as notFound:
     print("ERROR: The file {} cannot be found. Verify that it is in the proper directory.".format(notFound.filename))
 
 # Compounds that contain numbers (eg jeffamine 600)
-NUMBERED_COMPOUNDS = ["jeffamine", "propoxylate"]
+NUMBERED_COMPOUNDS = ["jeffamine", "propoxylate", "polypropylene", "ndsb"]
 
 class Structure:
 
@@ -203,6 +203,10 @@ class Structure:
             runAgain = False
             for j in range(1, len(words)):
                 if (words[j][-1] == 'k' and len(words[j]) > 3 and isNumber(words[j][:-1])):
+                    del words[j]
+                    runAgain = True
+                    break
+                elif (words[j][-1] == 'k' and len(words[j]) > 1 and isNumber(words[j][:-1]) and words[j-1] == "temperature"):
                     del words[j]
                     runAgain = True
                     break
@@ -405,8 +409,19 @@ class Structure:
                     runAgain = True
                     break
 
+        # If percent concentration is before and w/v is after
+        runAgain = True
+        while(runAgain):
+            runAgain = False
+            for j in range(0, len(words)-2):
+                if isPercent(words[j]) and isCompound(words[j+1]) and (words[j+2] == "w/v" or words[j+2] == "v/v"):
+                    words[j] = words[j] + " " + words[j+2]
+                    del words[j+2]
+                    runAgain = True
+                    break
+
         if debug:
-            print("Combine w/v and v/v with non-percent numbers:\n"+str(words)+"\n")
+            print("Parse w/v and v/v:\n"+str(words)+"\n")
 
         # Determine if concentration or compounds come first
         concentrationBeforeCompound = True
