@@ -426,10 +426,10 @@ class Structure:
         # Determine if concentration or compounds come first
         concentrationBeforeCompound = True
         for j in range(0, len(words)-1):
-            if isConcentraton(words[j]) and isCompound(words[j+1]):
+            if isConcentraton(words[j]) and isCompound(words[j+1]) and getKey(words[j+1]) in compoundDictionary:
                 concentrationBeforeCompound = True
                 break
-            elif isConcentraton(words[j+1]) and isCompound(words[j]):
+            elif isConcentraton(words[j+1]) and isCompound(words[j]) and getKey(words[j]) in compoundDictionary:
                 concentrationBeforeCompound = False
                 break
 
@@ -562,30 +562,37 @@ class Structure:
         print(str(errorObject)+"\n")
         print("Crystallization Details: {}\n\nCompounds: {}\n--------------------\n".format(self.details, self.compounds))
 
-def parseAllDetails(structureList, searchString=None):
+def parseAllDetails(structureList, searchString=None, structureFile=None):
     """Reparses all of the details for a list of structures
     Should be called when the parseDetails function has been modified
     If search string is not None, then it will only parse Structures
     which have the search string in their details, making it faster
+    If structureFile is specified, the structure list is saved to that file
     """
     print("Parsing details with search string: \"{}\"...".format(searchString))
     count = 1
+
+    if searchString != None:
+        structureList = [structure for structure in structureList if searchString.lower() in structure.details.lower()]
+
     for structure in structureList:
         if count == 1 or count % 10000 == 0:
             print("Parsing structure {} of {}".format(count, len(structureList)))
         try:
-            if searchString == None or searchString.lower() in structure.details.lower():
-                structure.parseDetails() # void
+            structure.parseDetails()
         except Exception as e:
             structure.printError("Unable to parse details", e)
         count += 1
-    print("Writing to file...")
-    writeStructures(structureList, STRUCTURES_FILE)
 
-def standardizeAllNames(structureList): # void
+    if structureFile != None:
+        print("Writing to structure file {}...".format(structureFile))
+        writeStructures(structureList, structureFile)
+
+def standardizeAllNames(structureList, structureFile=None): # void
     """Standardizes names of a list of compounds based on the compound Dictionary
     Also parses dictionary values which represent multiple compounds (e.g. acetic acid / sodium acetate)
     Also parses mixture compounds, which are mixtures of multiple compounds (e.g Molecular Dimensions Buffers)
+    If structureFile is specified, the structure list is saved to that file
     """
     updateSmilesDictionary() # Also calls updateDictionary
     print("Standardizing chemical names...")
@@ -594,6 +601,9 @@ def standardizeAllNames(structureList): # void
             structure.standardizeNames()
         except Exception as e:
             structure.printError("Unable to standardize compound names", e)
+    if structureFile != None:
+        print("Writing to structure file {}...".format(structureFile))
+        writeStructures(structureList, structureFile)
 
 def updateSmilesDictionary(): # void
     """Adds newly recognized compounds in the compound dictionary as blank keys to the SMILES dictionary"""
@@ -653,6 +663,9 @@ def exportCompoundFrequencies(structureList, outputFilename, mode="recognized"):
     Mode = "unknown": only export compounds found in unknownList
     Mode = "pending": only export compounds in neither dictionary nor unknown list, pending classification
     """
+    global compoundDictionary
+    global smilesDictionary
+
     print("Exporting compound frequencies to \"{}\"...".format(outputFilename))
     outputDictionary = {"Total Compounds": 0}
     if mode == "recognized":
@@ -680,7 +693,7 @@ def exportCompoundFrequencies(structureList, outputFilename, mode="recognized"):
 
     if mode == "pending":
         for structure in structureList:
-            for compound in structure.compounds[::2]:
+            for compound in [getKey(c) for c in structure.compounds[::2]]:
                 if getKey(compound) not in unknownList and getKey(compound) not in compoundDictionary and compound not in compoundDictionary.values():
                     if compound not in outputDictionary:
                         outputDictionary[compound] = 1
@@ -702,6 +715,31 @@ def exportOutputFiles():
     exportCompoundFrequencies(structureList, COMPOUND_FREQUENCY_FILE)
     exportCompoundFrequencies(structureList, UNKNOWN_FREQUENCY_FILE, mode="unknown")
     exportCompoundFrequencies(structureList, PENDING_FREQUENCY_FILE, mode="pending")
+
+def getDatabaseSubset(structureList, pdbidList, sensibleOnly=True, structureFile=None):
+    """Takes a list of PDB IDs and returns a list of structure files associated with them
+    If sensibleOnly is True, then only 'sensible' structures will be included
+    structureFile is an optional filename argument, if it is specified, then it will
+    export the subset of structure objects to the structure file specified"""
+    print("\nFetching database subset to export to {}...".format(structureFile))
+    structureSubsetList = []
+    pdbidList = list(set(pdbidList))
+    for pdbid in pdbidList:
+        structure = getStructure(structureList, pdbid)
+        if structure != None:
+            structureSubsetList.append(structure)
+
+    print("Fetched {} structures for databse subset".format(len(structureSubsetList)))
+
+    if sensibleOnly:
+        structureSubsetList = getSensibleStructures(structureSubsetList)
+        print("Fetched {} sensible structures from database subset".format(len(structureSubsetList)))
+
+    if structureFile != None:
+        print("Exporting structure subset to {}".format(structureFile))
+        writeStructures(structureSubsetList, structureFile)
+
+    return structureSubsetList
 
 def updateDictionary():
     """Makes sure all values in the compound dictionary are also keys
@@ -894,20 +932,35 @@ def getAllPdbs(filename=""): # list
 def loadStructures(structureFile=STRUCTURES_FILE): # list
     """Returns a list of structures from the pickled structure file"""
     print("Loading structures from file...")
-    return pickle.load(open(structureFile, "rb"))
+    try:
+        with open(structureFile, "rb") as f:
+            return pickle.load(open(structureFile, "rb"))
+    except FileNotFoundError as e:
+        traceback.print_tb(e.__traceback__)
+        print("ERROR: Structure file {} not found".format())
+        sys.exit()
 
 def writeStructures(structureList, structureFile):
     """Writes a list of structures to a pickle file"""
     try:
-        pickle.dump(structureList, open(structureFile, "wb"))
+        with open(structureFile, "wb") as f:
+            pickle.dump(structureList, f)
     except KeyboardInterrupt:
-        print("Writing to file...")
-        pickle.dump(structureList, open(structureFile, "wb"))
+        print("Keyboard interrupt detected. Writing to file...")
+        with open(structureFile, "wb") as f:
+            pickle.dump(structureList, f)
         sys.exit()
+    except PermissionError:
+        print("Permission denied when attempting to write structure. Waiting and trying again...")
+        sleep(5)
+        with open(structureFile, "wb") as f:
+            pickle.dump(structureList, f)
 
 if __name__ == "__main__":
     structureList = loadStructures(STRUCTURES_FILE) # Must have a Structure File availible (see wiki)
-    parseAllDetails(structureList, searchString=None)
-    standardizeAllNames(structureList)
+    parseAllDetails(structureList, searchString="**", structureFile=STRUCTURES_FILE)
+    standardizeAllNames(structureList, structureFile="Structures\\structures.pkl")
     exportOutputFiles()
+    # getDatabaseSubset(structureList, fileToList("xTuitionXrayPdbs.txt"), structureFile="Structures\\xTuition_structures.pkl")
+    # getDatabaseSubset(structureList, fileToList("HWI_Full_Pdbs.txt"), structureFile="Structures\\HWI_full_structures.pkl")
     # getStructure(structureList, "1B2W").parseDetails(debug=True)

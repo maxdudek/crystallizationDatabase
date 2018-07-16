@@ -1,40 +1,55 @@
 import json, csv, sys, pickle, collections
-from nltk import word_tokenize
 from misc_functions import loadJson, writeJson, printList, getKey, listToFile, fileToList
 from pdb_crystal_database import Structure
 from pdb_crystal_database import loadStructures, parseAllDetails, writeStructures
 
-UNKNOWN_LIST_FILE = "Input\\unknown_list.json"
+# Configure input locations
 COMPOUND_DICTIONARY_FILE = "Input\\compound_dictionary.json"
-STRUCTURES_FILE = "Structures\\structures.pkl"
+UNKNOWN_LIST_FILE = "Input\\unknown_list.json"
 STOP_WORDS_FILE = "Input\\stop_words.json"
 
-print("Loading dictionary files...")
-compoundDictionary = loadJson(COMPOUND_DICTIONARY_FILE)
-stopWords = loadJson(STOP_WORDS_FILE)
-unknownList = loadJson(UNKNOWN_LIST_FILE)
-structureList = loadStructures(STRUCTURES_FILE)
-passList = [] # A temporary list to allow the user to temporarily skip a compound
+STRUCTURES_FILE = "Structures\\structures.pkl"
 
 # Define input options
-INPUT_QUIT = "" # Exit the script
-INPUT_SAVE = "save" # Save files - currently done automatically after every change
-INPUT_UNKNOWN = "unknown" # Add the compound to the unknownList
 INPUT_SAME = "=" # Add the compound to the dictionary exactly as it appears (e.g. "sodium chloride" --> "sodium chloride")
-INPUT_UNDO = "u" # Undo - NOTE: undo is unreliable and should only be used for single dictionary changes
-# To undo a mistake safely, EXIT THE SCRIPT and make the change in the text/json files directly
-INPUT_IGNORE = "sw" # Add ALL WORDS in the compound to the list of stop words
+INPUT_UNKNOWN = "unknown" # Add the compound to the unknownList
+INPUT_STOP_WORDS = "sw" # Add ALL WORDS in the compound to the list of stop words
 # ex. if the compound is "well plate", both "well" and "plate" are added to the list
 INPUT_ADD_STOP_WORD = "add" # Adds a single stop word to the stopWord list
 # ex. "add well" will append "well" to the stopWords list
 INPUT_PASS = "pass" # Skips the current compound, does nothing to it
-INPUT_REMOVE_STOP_WORDS = "rm" # removes stop words from the compound and reloads the prompt
+INPUT_UNDO = "u" # Undo - NOTE: undo is unreliable and should only be used for single dictionary changes
+# To undo a mistake safely, EXIT THE SCRIPT and make the change in the text/json files directly
+INPUT_SAVE = "save" # Save files - currently done automatically after every change
+INPUT_QUIT = "quit" # Exit the script
+INPUT_QUIT_WITHOUT_SAVING = "quit no save" # Exit the script without saving files
 
+# Load input files
+print("Loading input files...")
+try:
+    compoundDictionary = loadJson(COMPOUND_DICTIONARY_FILE)
+except FileNotFoundError:
+    print("The compound dictionary file specified ({}) was not found. A blank dictionary file will be created at the specified location".format(COMPOUND_DICTIONARY_FILE))
+    compoundDictionary = {}
 
-def getCompoundList(structureList, sortedByFrequency=True, getKey=False): # list
+try:
+    stopWords = loadJson(STOP_WORDS_FILE)
+except FileNotFoundError:
+    print("The stop words file specified ({}) was not found. A blank file will be created at the specified location".format(STOP_WORDS_FILE))
+    stopWords = []
+
+try:
+    unknownList = loadJson(UNKNOWN_LIST_FILE)
+except FileNotFoundError:
+    print("The unknown list file specified ({}) was not found. A blank file will be created at the specified location".format(UNKNOWN_LIST_FILE))
+    unknownList = []
+
+passList = [] # A temporary list to allow the user to temporarily skip a compound
+
+def getCompoundList(structureList, sortedByFrequency=True, useGetKey=False): # list
     """Takes in a list of Structure Objects and returns a list of just the compound names
     If sortedByFrequency is True, the compound names are sorted by frequency
-    If getKey is true, then the compounds are turned into dictionary keys using getKey(), and then sorted (eg "na-cl" --> "nacl")
+    If useGetKey is true, then the compounds are turned into dictionary keys using getKey(), and then sorted (eg "na-cl" --> "nacl")
     """
     print("Getting compound list...")
     compoundList = []
@@ -50,7 +65,7 @@ def getCompoundList(structureList, sortedByFrequency=True, getKey=False): # list
 def removeStopWords(s, stopWords):
     """Takes a string and returns a string with stop words removed
     stopWords = A list of words to remove"""
-    words = word_tokenize(s)
+    words = s.split(" ")
     words = [word for word in words if word not in stopWords]
     return printList(words, " ")
 
@@ -61,10 +76,11 @@ def saveFiles():
     writeJson(stopWords, STOP_WORDS_FILE, indent=2)
     print("Files saved")
 
-def generateDictionary(compoundList): # dictionary
+def generateDictionary(compoundList, autoSave=True): # dictionary
     """ Iterates through a list and substitutes elements based on a dictionary
     If no key is found for the element, the user is prompted to enter an entry
     See INPUT definitions above for more options
+    If autoSave is True, then the files will save after every step
     """
     print("Beginning dictionary generation (may take a minute)...")
     history = [] # A list of modified indeces, in order to UNDO
@@ -85,22 +101,18 @@ def generateDictionary(compoundList): # dictionary
                     inputText = input("Enter the name of the following compound:\n{}\n$:".format(compound))
                     # PARSE INPUT
                     if inputText == INPUT_QUIT: # Quit
-                        inputText = input("Really quit?\n0: Save and quit\n1: Quit without saving\n2: Don't quit\n$:")
-                        if inputText == "0":
-                            saveFiles()
-                            sys.exit()
-                        elif inputText == "1":
-                            sys.exit()
-                        else:
-                            runAgain = True
+                        saveFiles()
+                        sys.exit()
+                    elif inputText == INPUT_QUIT_WITHOUT_SAVING: # Quit without saving
+                        sys.exit()
                     elif inputText == INPUT_SAVE: # Save
                         saveFiles()
                         runAgain = True
                     elif inputText == INPUT_UNKNOWN: # Unknown compound
                         unknownList.append(getKey(compound))
                         history.append(i)
-                    elif inputText == INPUT_IGNORE:
-                        ignored_words = word_tokenize(compound)
+                    elif inputText == INPUT_STOP_WORDS:
+                        ignored_words = compound.split(" ")
                         for word in ignored_words:
                             if word not in stopWords:
                                 stopWords.append(word)
@@ -131,12 +143,9 @@ def generateDictionary(compoundList): # dictionary
                             print("Added stop word {}".format(wordToAdd))
                             compound = removeStopWords(compound, stopWords)
                             runAgain = True
-                    elif inputText == INPUT_REMOVE_STOP_WORDS:
-                        compound = removeStopWords(compound, stopWords)
-                        runAgain = True
                     elif inputText == INPUT_PASS:
                         passList.append(compound)
-                    else: # Normal input
+                    else: # Normal input to add to dictionary
                         nameOfCompound = inputText
                         if inputText == INPUT_SAME:
                             nameOfCompound = compound
@@ -150,7 +159,8 @@ def generateDictionary(compoundList): # dictionary
                             print("Added")
                         else:
                             runAgain = True
-                saveFiles()
+                if autoSave:
+                    saveFiles()
         else: # END
             runAgain = True
             while(runAgain):
@@ -184,12 +194,13 @@ def generateDictionary(compoundList): # dictionary
                     sys.exit()
         i += 1
 
-
-# parseAllDetails(structureList)
-# writeStructures(structureList, STRUCTURES_FILE)
-compoundList = getCompoundList(structureList)
-try:
-    generateDictionary(compoundList)
-except KeyboardInterrupt:
-    saveFiles()
-    sys.exit()
+if __name__ == "__main__":
+    structureList = loadStructures(STRUCTURES_FILE)
+    # parseAllDetails(structureList)
+    # writeStructures(structureList, STRUCTURES_FILE)
+    compoundList = getCompoundList(structureList, useGetKey=True)
+    try:
+        generateDictionary(compoundList)
+    except KeyboardInterrupt:
+        saveFiles()
+        sys.exit()

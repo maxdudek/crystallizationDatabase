@@ -29,5 +29,12 @@
       "sodium acetate": 0.4,
       "sodium formate": 0.5,
       "ammonium hydrogen tartrate": 0.16
+   },
+   "carboxylic acids": {
+      "sodium formate": 0.2,
+      "ammonium acetate": 0.2,
+      "sodium citrate": 0.2,
+      "sodium oxamate": 0.2,
+      "potassium sodium tartrate": 0.2
    }
 }
