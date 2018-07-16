@@ -6,4 +6,4 @@ This Python package contains tools for building and searching a database of crys
 * Standardization of chemical names by a dictionary of compounds
 * Application to dynamically build and improve the dictionary
 
-For more information on how to use the package see the Wiki.
+For more information on how to use the package see the [Wiki](https://github.com/maxdudek/crystallizationDatabase/wiki).
