@@ -1,7 +1,8 @@
-import json, csv, sys, pickle, collections
+import json, csv, sys, pickle, collections, os
 from misc_functions import loadJson, writeJson, printList, getKey, listToFile, fileToList
 from pdb_crystal_database import Structure
 from pdb_crystal_database import loadStructures, parseAllDetails, writeStructures
+from pathlib import Path
 
 # Make sure directories exist
 if not os.path.exists("Structures"):
@@ -33,7 +34,7 @@ INPUT_QUIT = "quit" # Exit the script
 INPUT_QUIT_WITHOUT_SAVING = "quit no save" # Exit the script without saving files
 
 # Load input files
-print("Loading input files...")
+print("Loading input files for dictionary generator...")
 try:
     compoundDictionary = loadJson(COMPOUND_DICTIONARY_FILE)
 except FileNotFoundError:
@@ -153,6 +154,8 @@ def generateDictionary(compoundList, autoSave=True): # dictionary
                             runAgain = True
                     elif inputText == INPUT_PASS:
                         passList.append(compound)
+                    elif inputText == "":
+                        runAgain = True
                     else: # Normal input to add to dictionary
                         nameOfCompound = inputText
                         if inputText == INPUT_SAME:

@@ -1016,5 +1016,10 @@
   "reagents",
   "protein-inhibitor",
   "capillary",
-  "protein-ligand"
+  "protein-ligand",
+  "under-oil",
+  "ratio-seeding",
+  "wild",
+  "type",
+  "wild-type"
 ]

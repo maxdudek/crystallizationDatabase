@@ -57,8 +57,8 @@ NUMBERED_COMPOUNDS = ["jeffamine", "propoxylate", "polypropylene", "ndsb"]
 
 class Structure:
 
-    # Global variables used for parsing of details
-    RESEVOIR_INDICATOR_WORDS = {"reservoir", "resevoir", "crystallization", "precipitant", "well", "solution", "cocktail"}
+    # Used for legacy version of removing protein solution
+    # RESEVOIR_INDICATOR_WORDS = {"reservoir", "resevoir", "crystallization", "precipitant", "well", "solution", "cocktail"}
 
 
     def __init__(self, pdbid, pmcid, details, compounds, pH, temperature, method, sequences, resolution):
@@ -124,32 +124,44 @@ class Structure:
         details = wordReplacement(details, sensitiveReplacement, debug=debug) # Replace with case sensitivity
         details = wordReplacement(details.lower(), lowercaseReplacement, debug=debug) # Replace without case sensitivity
 
+        if debug:
+            print("Word replacement:\n"+details+"\n")
+
         # Remove all text after 'cryo'
         cryoLocation = details.find("cryo")
         if cryoLocation != -1:
             details = details[:cryoLocation]
 
+        # Remove all text before "reservoir solution" to include only resevoir soltuion
+        reservoirLocation = details.find("reservoir solution")
+        if reservoirLocation != -1:
+            details = details[reservoirLocation:]
+            # Remove protein solution if it comes after reservoir solution
+            proteinLocation = details.find("protein solution")
+            if proteinLocation != -1:
+                details = details[:proteinLocation]
+
         if debug:
-            print("Word replacement:\n"+details+"\n")
+            print("Isolate resevoir solution:\n"+details+"\n")
 
         words = nltk.word_tokenize(details)
 
         if debug:
             print("Tokenized words:\n"+str(words)+"\n")
 
-        # Get correct sentence
-        if len(words) > 1 and words[0] == "protein" and words[1] in Structure.RESEVOIR_INDICATOR_WORDS:
-            reservoirSolutionFound = False
-            for j in range(0, len(words)-1):
-                if ((words[j] in Structure.RESEVOIR_INDICATOR_WORDS) and (words[j+1] in Structure.RESEVOIR_INDICATOR_WORDS)):
-                    words = words[j:]
-                    reservoirSolutionFound = True
-                    break
-            if (not reservoirSolutionFound):
-                words = ["ERROR", "Resevoir solution not found"]
+        # Remove protein solution - legacy, obsolete
+        # if len(words) > 1 and words[0] == "protein" and words[1] in Structure.RESEVOIR_INDICATOR_WORDS:
+        #     reservoirSolutionFound = False
+        #     for j in range(0, len(words)-1):
+        #         if ((words[j] in Structure.RESEVOIR_INDICATOR_WORDS) and (words[j+1] in Structure.RESEVOIR_INDICATOR_WORDS)):
+        #             words = words[j:]
+        #             reservoirSolutionFound = True
+        #             break
+        #     if (not reservoirSolutionFound):
+        #         return None # Only protein solution
 
         if debug:
-            print("Correct sentence:\n"+str(words)+"\n")
+            print("Remove protein solution:\n"+str(words)+"\n")
 
         # Fix commas between numbers (turn 6000,10 in to 6000 , 10)
         runAgain = True
@@ -581,11 +593,12 @@ def parseAllDetails(structureList, searchString=None, structureFile=None):
 
     if searchString != None:
         structureList = [structure for structure in structureList if searchString.lower() in structure.details.lower()]
-        if structureList = []:
+        if structureList == []:
             print("No structures found with search string '{}'".format(searchString))
 
+    print("Parsing details of {} structures".format(len(structureList)))
     for structure in structureList:
-        if count == 1 or count % 10000 == 0:
+        if count % 10000 == 0:
             print("Parsing structure {} of {}".format(count, len(structureList)))
         try:
             structure.parseDetails()
@@ -666,8 +679,9 @@ def exportDetails(structureList, outputFilename=DETAILS_FILE):
             outputList.append(structure.compounds)
     listToFile(outputList, outputFilename)
 
-def exportCompoundFrequencies(structureList, outputFilename, mode="recognized"):
-    """Takes a list of structures and outputs compound frequency to a txt file
+def getCompoundFrequencies(structureList, outputFilename=None, mode="recognized"):
+    """Takes a list of structures and returns a dictionary mapping compounds to their frequency
+    If outputFilename != None, it also outputs compound frequency to a txt file
     Mode = "recognized": only export compounds found in the dictionary
     Mode = "unknown": only export compounds found in unknownList
     Mode = "pending": only export compounds in neither dictionary nor unknown list, pending classification
@@ -711,19 +725,22 @@ def exportCompoundFrequencies(structureList, outputFilename, mode="recognized"):
                     outputDictionary["Total Compounds"] += 1
 
     # Export
-    outputList = []
-    for key, value in sorted(outputDictionary.items(), key=operator.itemgetter(1), reverse=True):
-        outputList.append("{:30s}: {:20d}".format(key, value))
-    listToFile(outputList, outputFilename)
+    if outputFilename != None:
+        outputList = []
+        for key, value in sorted(outputDictionary.items(), key=operator.itemgetter(1), reverse=True):
+            outputList.append("{:30s}: {:20d}".format(key, value))
+        listToFile(outputList, outputFilename)
+
+    return outputDictionary
 
 def exportOutputFiles():
     """Just a simple way to export all of the output files"""
     exportSensibleStructures(structureList)
     exportDetails(getUnknowns(structureList), UNKNOWN_DETAILS_FILE)
     exportDetails(structureList, DETAILS_FILE)
-    exportCompoundFrequencies(structureList, COMPOUND_FREQUENCY_FILE)
-    exportCompoundFrequencies(structureList, UNKNOWN_FREQUENCY_FILE, mode="unknown")
-    exportCompoundFrequencies(structureList, PENDING_FREQUENCY_FILE, mode="pending")
+    getCompoundFrequencies(sensibleStructureList, outputFilename=COMPOUND_FREQUENCY_FILE)
+    getCompoundFrequencies(structureList, outputFilename=UNKNOWN_FREQUENCY_FILE, mode="unknown")
+    getCompoundFrequencies(structureList, outputFilename=PENDING_FREQUENCY_FILE, mode="pending")
 
 def getDatabaseSubset(structureList, pdbidList, sensibleOnly=True, structureFile=None):
     """Takes a list of PDB IDs and returns a list of structure files associated with them
@@ -940,7 +957,7 @@ def getAllPdbs(filename=""): # list
 
 def loadStructures(structureFile=STRUCTURES_FILE): # list
     """Returns a list of structures from the pickled structure file"""
-    print("Loading structures from file...")
+    print("Loading structures from file {}...".format(structureFile))
     try:
         with open(structureFile, "rb") as f:
             return pickle.load(open(structureFile, "rb"))
@@ -964,10 +981,12 @@ def writeStructures(structureList, structureFile):
         sleep(5)
         with open(structureFile, "wb") as f:
             pickle.dump(structureList, f)
+        print("Successfully wrote structures")
 
 if __name__ == "__main__":
     structureList = loadStructures(STRUCTURES_FILE) # Must have a Structure File availible (see wiki)
-    parseAllDetails(structureList, searchString="**", structureFile=STRUCTURES_FILE)
+    # parseAllDetails(structureList, searchString=None, structureFile=STRUCTURES_FILE)
     standardizeAllNames(structureList, structureFile="Structures\\structures.pkl")
+    sensibleStructureList = loadStructures(SENSIBLE_STRUCTURES_FILE)
     exportOutputFiles()
-    # getStructure(structureList, "1B2W").parseDetails(debug=True)
+    # getStructure(structureList, "1AOW").parseDetails(debug=True)
