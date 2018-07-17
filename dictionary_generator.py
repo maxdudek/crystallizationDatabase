@@ -71,6 +71,14 @@ def getCompoundList(structureList, sortedByFrequency=True, useGetKey=False): # l
         compoundList = sorted(compoundList, key=lambda x: -counts[x])
     return compoundList
 
+def printRecognizedCompounds(compoundList):
+    """Prints out how many compounds are recognized, out of the total compounds"""
+    count = 0
+    for compound in compoundList:
+        if compound in compoundDictionary:
+            count += 1
+    print("{} out of {} compounds recognized".format(count, len(compoundList)))
+
 def removeStopWords(s, stopWords):
     """Takes a string and returns a string with stop words removed
     stopWords = A list of words to remove"""
@@ -210,8 +218,5 @@ if __name__ == "__main__":
     # parseAllDetails(structureList)
     # writeStructures(structureList, STRUCTURES_FILE)
     compoundList = getCompoundList(structureList, useGetKey=True)
-    try:
-        generateDictionary(compoundList)
-    except KeyboardInterrupt:
-        saveFiles()
-        sys.exit()
+    # generateDictionary(compoundList)
+    printRecognizedCompounds(compoundList)

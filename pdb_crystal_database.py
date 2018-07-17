@@ -132,6 +132,11 @@ class Structure:
         if cryoLocation != -1:
             details = details[:cryoLocation]
 
+        # Removed all text after 'soaked'
+        soakedLocation = details.find("soaked")
+        if soakedLocation != -1:
+            details = details[:soakedLocation]
+
         # Remove all text before "reservoir solution" to include only resevoir soltuion
         reservoirLocation = details.find("reservoir solution")
         if reservoirLocation != -1:
@@ -716,7 +721,7 @@ def getCompoundFrequencies(structureList, outputFilename=None, mode="recognized"
 
     if mode == "pending":
         for structure in structureList:
-            for compound in [getKey(c) for c in structure.compounds[::2]]:
+            for compound in structure.compounds[::2]:
                 if getKey(compound) not in unknownList and getKey(compound) not in compoundDictionary and compound not in compoundDictionary.values():
                     if compound not in outputDictionary:
                         outputDictionary[compound] = 1
@@ -985,8 +990,9 @@ def writeStructures(structureList, structureFile):
 
 if __name__ == "__main__":
     structureList = loadStructures(STRUCTURES_FILE) # Must have a Structure File availible (see wiki)
-    # parseAllDetails(structureList, searchString=None, structureFile=STRUCTURES_FILE)
-    standardizeAllNames(structureList, structureFile="Structures\\structures.pkl")
+    # parseAllDetails(structureList, searchString="k, na", structureFile=STRUCTURES_FILE)
+    standardizeAllNames(structureList, structureFile=STRUCTURES_FILE)
     sensibleStructureList = loadStructures(SENSIBLE_STRUCTURES_FILE)
+
     exportOutputFiles()
-    # getStructure(structureList, "1AOW").parseDetails(debug=True)
+    # getStructure(structureList, "1IB5").parseDetails(debug=True)
