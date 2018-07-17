@@ -3,33 +3,40 @@ import xml.etree.ElementTree as etree
 from misc_functions import loadJson, writeJson, printList, fileToList, listToFile, getKey
 from time import sleep
 from collections import OrderedDict
+from pathlib import Path
 
-# Input Files
-COMPOUND_DICTIONARY_FILE = "Input\\compound_dictionary.json"
-SMILES_DICTIONARY_FILE = "Input\\smiles_dictionary.json"
-WITHOUT_DETAILS_FILE = "Input\\pdbs_without_details.json"
-STOP_WORDS_FILE = "Input\\stop_words.json"
-UNKNOWN_LIST_FILE = "Input\\unknown_list.json"
-LOWERCASE_REPLACEMENT_FILE = "Input\\replacementLowercase.json"
-SENSITIVE_REPLACEMENT_FILE = "Input\\replacementSensitive.json"
-MIXTURES_FILE = "Input\\mixture_compounds.json"
-
-STRUCTURES_FILE = "Structures\\structures.pkl" # The database file. Must be place in proper location
-SENSIBLE_STRUCTURES_FILE = "Structures\\sensible_structures.pkl" # Output only, not required
-
+# Make sure directories exist
 if not os.path.exists("Output"):
     os.makedirs("Output")
 if not os.path.exists("Structures"):
     os.makedirs("Structures")
 
+# Create Path objects for directories
+INPUT_DIR = Path("Input/")
+STRUCTURE_DIR = Path("Structures/")
+OUTPUT_DIR = Path("Output/")
+
+# Input Files
+COMPOUND_DICTIONARY_FILE = INPUT_DIR / "compound_dictionary.json"
+SMILES_DICTIONARY_FILE = INPUT_DIR / "smiles_dictionary.json"
+WITHOUT_DETAILS_FILE = INPUT_DIR / "pdbs_without_details.json"
+STOP_WORDS_FILE = INPUT_DIR / "stop_words.json"
+UNKNOWN_LIST_FILE = INPUT_DIR / "unknown_list.json"
+LOWERCASE_REPLACEMENT_FILE = INPUT_DIR / "replacementLowercase.json"
+SENSITIVE_REPLACEMENT_FILE = INPUT_DIR / "replacementSensitive.json"
+MIXTURES_FILE = INPUT_DIR / "mixture_compounds.json"
+
+# Structure Files - serialized binary files containing a list of Structure objects
+STRUCTURES_FILE = STRUCTURE_DIR / "structures.pkl" # The database file. Must be place in proper location
+SENSIBLE_STRUCTURES_FILE = STRUCTURE_DIR / "sensible_structures.pkl" # Output only, not required
 
 # Output Files
-DETAILS_FILE = "Output\\details.txt"
-SENSIBLE_DETAILS_FILE = "Output\\sensible_details.txt"
-UNKNOWN_DETAILS_FILE = "Output\\unknown_details.txt"
-COMPOUND_FREQUENCY_FILE = "Output\\compound_frequency.txt"
-UNKNOWN_FREQUENCY_FILE = "Output\\unknown_frequency.txt"
-PENDING_FREQUENCY_FILE = "Output\\pending_frequency.txt"
+DETAILS_FILE = OUTPUT_DIR / "details.txt"
+SENSIBLE_DETAILS_FILE = OUTPUT_DIR / "sensible_details.txt"
+UNKNOWN_DETAILS_FILE = OUTPUT_DIR / "unknown_details.txt"
+COMPOUND_FREQUENCY_FILE = OUTPUT_DIR / "compound_frequency.txt"
+UNKNOWN_FREQUENCY_FILE = OUTPUT_DIR / "unknown_frequency.txt"
+PENDING_FREQUENCY_FILE = OUTPUT_DIR / "pending_frequency.txt"
 
 # Load lists and dictionaries from files
 print("Loading input files...")
@@ -574,6 +581,8 @@ def parseAllDetails(structureList, searchString=None, structureFile=None):
 
     if searchString != None:
         structureList = [structure for structure in structureList if searchString.lower() in structure.details.lower()]
+        if structureList = []:
+            print("No structures found with search string '{}'".format(searchString))
 
     for structure in structureList:
         if count == 1 or count % 10000 == 0:
@@ -961,6 +970,4 @@ if __name__ == "__main__":
     parseAllDetails(structureList, searchString="**", structureFile=STRUCTURES_FILE)
     standardizeAllNames(structureList, structureFile="Structures\\structures.pkl")
     exportOutputFiles()
-    # getDatabaseSubset(structureList, fileToList("xTuitionXrayPdbs.txt"), structureFile="Structures\\xTuition_structures.pkl")
-    # getDatabaseSubset(structureList, fileToList("HWI_Full_Pdbs.txt"), structureFile="Structures\\HWI_full_structures.pkl")
     # getStructure(structureList, "1B2W").parseDetails(debug=True)

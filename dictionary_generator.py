@@ -3,12 +3,20 @@ from misc_functions import loadJson, writeJson, printList, getKey, listToFile, f
 from pdb_crystal_database import Structure
 from pdb_crystal_database import loadStructures, parseAllDetails, writeStructures
 
-# Configure input locations
-COMPOUND_DICTIONARY_FILE = "Input\\compound_dictionary.json"
-UNKNOWN_LIST_FILE = "Input\\unknown_list.json"
-STOP_WORDS_FILE = "Input\\stop_words.json"
+# Make sure directories exist
+if not os.path.exists("Structures"):
+    os.makedirs("Structures")
 
-STRUCTURES_FILE = "Structures\\structures.pkl"
+# Create Path objects for directories
+INPUT_DIR = Path("Input/")
+STRUCTURE_DIR = Path("Structures/")
+
+# Configure input locations
+COMPOUND_DICTIONARY_FILE = INPUT_DIR / "compound_dictionary.json"
+UNKNOWN_LIST_FILE = INPUT_DIR / "unknown_list.json"
+STOP_WORDS_FILE = INPUT_DIR / "stop_words.json"
+
+STRUCTURES_FILE = STRUCTURE_DIR / "structures.pkl"
 
 # Define input options
 INPUT_SAME = "=" # Add the compound to the dictionary exactly as it appears (e.g. "sodium chloride" --> "sodium chloride")
