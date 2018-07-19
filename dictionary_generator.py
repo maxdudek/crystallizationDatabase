@@ -64,7 +64,7 @@ def getCompoundList(structureList, sortedByFrequency=True, useGetKey=False): # l
     compoundList = []
     for structure in structureList:
         compoundList.extend(structure.compounds[0::2])
-    if getKey:
+    if useGetKey:
         compoundList = [getKey(compound) for compound in compoundList if compoundList]
     counts = collections.Counter(compoundList)
     if sortedByFrequency:
@@ -93,11 +93,13 @@ def saveFiles():
     writeJson(stopWords, STOP_WORDS_FILE, indent=2)
     print("Files saved")
 
-def generateDictionary(compoundList, autoSave=True): # dictionary
+def generateDictionary(compoundList, autoSave=True, autoAdd=True): # dictionary
     """ Iterates through a list and substitutes elements based on a dictionary
     If no key is found for the element, the user is prompted to enter an entry
     See INPUT definitions above for more options
     If autoSave is True, then the files will save after every step
+    If autoAdd is True, the dictionary will automatically add an identical key for every value entered
+        For example, if "nacl" is mapped to "sodium chloride", the key "sodiumchloride" is also added to map to "sodium chloride"
     """
     print("Beginning dictionary generation (may take a minute)...")
     history = [] # A list of modified indeces, in order to UNDO
@@ -172,7 +174,7 @@ def generateDictionary(compoundList, autoSave=True): # dictionary
                         if inputText != "n":
                             compoundDictionary[getKey(compound)] = nameOfCompound
                             # Add the value to the dictionary with itself as the key
-                            if getKey(nameOfCompound.lower()) not in compoundDictionary:
+                            if autoAdd and getKey(nameOfCompound.lower()) not in compoundDictionary:
                                 compoundDictionary[getKey(nameOfCompound.lower())] = nameOfCompound
                             history.append(i)
                             print("Added")
@@ -217,6 +219,6 @@ if __name__ == "__main__":
     structureList = loadStructures(STRUCTURES_FILE)
     # parseAllDetails(structureList)
     # writeStructures(structureList, STRUCTURES_FILE)
-    compoundList = getCompoundList(structureList, useGetKey=True)
-    # generateDictionary(compoundList)
-    printRecognizedCompounds(compoundList)
+    compoundList = getCompoundList(structureList, useGetKey=False)
+    generateDictionary(compoundList)
+    # printRecognizedCompounds(compoundList)

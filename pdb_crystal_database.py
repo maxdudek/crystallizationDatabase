@@ -33,6 +33,7 @@ SENSIBLE_STRUCTURES_FILE = STRUCTURE_DIR / "sensible_structures.pkl" # Output on
 # Output Files
 DETAILS_FILE = OUTPUT_DIR / "details.txt"
 SENSIBLE_DETAILS_FILE = OUTPUT_DIR / "sensible_details.txt"
+NON_SENSIBLE_DETAILS_FILE = OUTPUT_DIR / "nonsensible_details.txt"
 UNKNOWN_DETAILS_FILE = OUTPUT_DIR / "unknown_details.txt"
 COMPOUND_FREQUENCY_FILE = OUTPUT_DIR / "compound_frequency.txt"
 UNKNOWN_FREQUENCY_FILE = OUTPUT_DIR / "unknown_frequency.txt"
@@ -51,6 +52,14 @@ try:
 except FileNotFoundError as notFound:
     print(notFound)
     print("ERROR: The file {} cannot be found. Verify that it is in the proper directory.".format(notFound.filename))
+
+# Global variables set by exportOutputFiles()
+compoundFrequency = {}
+unknownFrequency = {}
+pendingFrequency = {}
+sensibleStructureList = []
+nonsensibleStructureList = []
+
 
 # Compounds that contain numbers (eg jeffamine 600)
 NUMBERED_COMPOUNDS = ["jeffamine", "propoxylate", "polypropylene", "ndsb"]
@@ -336,8 +345,28 @@ class Structure:
                     words.insert(j+1, words[j][-2:])
                     words[j] = str(averageNumberString(words[j][:-2]))
 
+        # Remove temperature again
+        runAgain = True
+        while (runAgain): # Temperature
+            runAgain = False
+            for j in range(1, len(words)):
+                if (words[j][-1] == 'k' and len(words[j]) > 3 and isNumber(words[j][:-1])):
+                    del words[j]
+                    runAgain = True
+                    break
+                elif (words[j][-1] == 'k' and len(words[j]) > 1 and isNumber(words[j][:-1]) and words[j-1] == "temperature"):
+                    del words[j]
+                    runAgain = True
+                    break
+                elif words[j] == 'k' and isNumber(words[j-1]):
+                    temp = float(words[j-1].replace(",",""))
+                    if temp > 200 and temp < 400:
+                        del words[j-1:j+1]
+                        runAgain = True
+                        break
+
         if debug:
-            print("Average ranges of numbers:\n"+str(words)+"\n")
+            print("Average ranges of numbers and remove temperature again:\n"+str(words)+"\n")
 
         if len(words) == 0:
             return None
@@ -658,7 +687,7 @@ def getSensibleStructures(structureList):
             sensibleStructures.append(structure)
     return sensibleStructures
 
-def exportSensibleStructures(structureList, structureFile=SENSIBLE_STRUCTURES_FILE, detailsFIle=SENSIBLE_DETAILS_FILE):
+def exportSensibleStructures(structureList, structureFile=SENSIBLE_STRUCTURES_FILE, detailsFile=SENSIBLE_DETAILS_FILE):
     """Exports a list of sensible structures to a serialized pickle file
     Also returns the list of sensible structures from getSensibleStructures
     Also exports the details of the sensible structures"""
@@ -666,7 +695,7 @@ def exportSensibleStructures(structureList, structureFile=SENSIBLE_STRUCTURES_FI
     writeStructures(sensibleStructures, structureFile)
     print("Retrieved {} sensible structures".format(len(sensibleStructures)))
 
-    exportDetails(sensibleStructures, detailsFIle)
+    exportDetails(sensibleStructures, detailsFile)
     return sensibleStructures
 
 def getUnknowns(structureList):
@@ -674,7 +703,7 @@ def getUnknowns(structureList):
     print("Finding unknown compounds...")
     return [structure for structure in structureList if structure.hasUnknown()]
 
-def exportDetails(structureList, outputFilename=DETAILS_FILE):
+def exportDetails(structureList, outputFilename):
     """Exports the details of a list of structures to a text file"""
     print("Exporting details to \"{}\"...".format(outputFilename))
     outputList = []
@@ -738,14 +767,18 @@ def getCompoundFrequencies(structureList, outputFilename=None, mode="recognized"
 
     return outputDictionary
 
-def exportOutputFiles():
-    """Just a simple way to export all of the output files"""
-    exportSensibleStructures(structureList)
-    exportDetails(getUnknowns(structureList), UNKNOWN_DETAILS_FILE)
+def exportOutputFiles(structureList):
+    """Just a simple way to export all of the output files
+    Also sets a bunch of useful global variables"""
+    global compoundFrequency, unknownFrequency, pendingFrequency, sensibleStructureList, nonsensibleStructureList
+    sensibleStructureList = exportSensibleStructures(structureList)
+    nonsensibleStructureList = list(set(structureList) - set(sensibleStructureList))
     exportDetails(structureList, DETAILS_FILE)
-    getCompoundFrequencies(sensibleStructureList, outputFilename=COMPOUND_FREQUENCY_FILE)
-    getCompoundFrequencies(structureList, outputFilename=UNKNOWN_FREQUENCY_FILE, mode="unknown")
-    getCompoundFrequencies(structureList, outputFilename=PENDING_FREQUENCY_FILE, mode="pending")
+    exportDetails(getUnknowns(structureList), UNKNOWN_DETAILS_FILE)
+    exportDetails(nonsensibleStructureList, NON_SENSIBLE_DETAILS_FILE)
+    compoundFrequency = getCompoundFrequencies(sensibleStructureList, outputFilename=COMPOUND_FREQUENCY_FILE)
+    unknownFrequency = getCompoundFrequencies(structureList, outputFilename=UNKNOWN_FREQUENCY_FILE, mode="unknown")
+    pendingFrequency = getCompoundFrequencies(structureList, outputFilename=PENDING_FREQUENCY_FILE, mode="pending")
 
 def getDatabaseSubset(structureList, pdbidList, sensibleOnly=True, structureFile=None):
     """Takes a list of PDB IDs and returns a list of structure files associated with them
@@ -896,7 +929,7 @@ def fetchStructures(pdbList, structureFile=STRUCTURES_FILE, onlyDetails=True, ig
     ignoredPdbList.extend(completedPdbList)
 
     print("Removing completed pdbs (May take a minute)...")
-    pdbList = [pdbid for pdbid in pdbList if pdbid not in ignoredPdbList]
+    pdbList = list(set(pdbList)-set(ignoredPdbList))
 
     if pdbList == []:
         print("All PDBs have been ignored. No more PDBs need to be downloaded.")
@@ -982,7 +1015,7 @@ def writeStructures(structureList, structureFile):
             pickle.dump(structureList, f)
         sys.exit()
     except PermissionError:
-        print("Permission denied when attempting to write structure. Waiting and trying again...")
+        print("Permission denied when attempting to write structures. Waiting and trying again...")
         sleep(5)
         with open(structureFile, "wb") as f:
             pickle.dump(structureList, f)
@@ -990,9 +1023,16 @@ def writeStructures(structureList, structureFile):
 
 if __name__ == "__main__":
     structureList = loadStructures(STRUCTURES_FILE) # Must have a Structure File availible (see wiki)
-    # parseAllDetails(structureList, searchString="k, na", structureFile=STRUCTURES_FILE)
+    parseAllDetails(structureList, searchString=None, structureFile=STRUCTURES_FILE)
     standardizeAllNames(structureList, structureFile=STRUCTURES_FILE)
-    sensibleStructureList = loadStructures(SENSIBLE_STRUCTURES_FILE)
-
-    exportOutputFiles()
-    # getStructure(structureList, "1IB5").parseDetails(debug=True)
+    exportOutputFiles(structureList)
+    # sensibleStructureList = loadStructures(SENSIBLE_STRUCTURES_FILE)
+    # maxCompounds = 3
+    # for structure in sensibleStructureList:
+    #     if len(structure.compounds) / 2 > maxCompounds and "tacsimate" not in structure.details.lower():
+    #         maxStructure = structure
+    #         maxCompounds = len(structure.compounds) / 2
+    # print(maxCompounds)
+    # print(maxStructure.details)
+    # print(maxStructure.compounds)
+    # getStructure(structureList, "7ICE").parseDetails(debug=True)
