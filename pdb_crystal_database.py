@@ -1,5 +1,4 @@
-import requests, sys, json, pickle, nltk, random, operator, traceback, os
-import xml.etree.ElementTree as etree
+import sys, json, pickle, operator, traceback, os
 from misc_functions import loadJson, writeJson, printList, fileToList, listToFile, getKey
 from time import sleep
 from collections import OrderedDict
@@ -19,7 +18,7 @@ OUTPUT_DIR = Path("Output/")
 # Input Files
 COMPOUND_DICTIONARY_FILE = INPUT_DIR / "compound_dictionary.json"
 SMILES_DICTIONARY_FILE = INPUT_DIR / "smiles_dictionary.json"
-WITHOUT_DETAILS_FILE = INPUT_DIR / "pdbs_without_details.json"
+
 STOP_WORDS_FILE = INPUT_DIR / "stop_words.json"
 UNKNOWN_LIST_FILE = INPUT_DIR / "unknown_list.json"
 LOWERCASE_REPLACEMENT_FILE = INPUT_DIR / "replacementLowercase.json"
@@ -27,7 +26,7 @@ SENSITIVE_REPLACEMENT_FILE = INPUT_DIR / "replacementSensitive.json"
 MIXTURES_FILE = INPUT_DIR / "mixture_compounds.json"
 
 # Structure Files - serialized binary files containing a list of Structure objects
-STRUCTURES_FILE = STRUCTURE_DIR / "structures.pkl" # The database file. Must be place in proper location
+STRUCTURES_FILE = STRUCTURE_DIR / "structures.pkl" # The database file. Must be placed in proper location
 SENSIBLE_STRUCTURES_FILE = STRUCTURE_DIR / "sensible_structures.pkl" # Output only, not required
 
 # Output Files
@@ -60,7 +59,6 @@ pendingFrequency = {}
 sensibleStructureList = []
 nonsensibleStructureList = []
 
-
 # Compounds that contain numbers (eg jeffamine 600)
 NUMBERED_COMPOUNDS = ["jeffamine", "propoxylate", "polypropylene", "ndsb"]
 
@@ -68,7 +66,6 @@ class Structure:
 
     # Used for legacy version of removing protein solution
     # RESEVOIR_INDICATOR_WORDS = {"reservoir", "resevoir", "crystallization", "precipitant", "well", "solution", "cocktail"}
-
 
     def __init__(self, pdbid, pmcid, details, compounds, pH, temperature, method, sequences, resolution):
         self.pdbid = pdbid # String
@@ -103,6 +100,10 @@ class Structure:
         Also sets the compounds list of the structure
         Returns None if failed or if details are unavailible
         """
+        global nltk
+
+        # Make sure NLTK is imported
+        importNLTK()
 
         if (detailsString==None):
             details = self.details
@@ -615,13 +616,18 @@ class Structure:
         print(str(errorObject)+"\n")
         print("Crystallization Details: {}\n\nCompounds: {}\n--------------------\n".format(self.details, self.compounds))
 
-def parseAllDetails(structureList, searchString=None, structureFile=None):
+def parseAllDetails(structureList, structureFile=None, searchString=None):
     """Reparses all of the details for a list of structures
     Should be called when the parseDetails function has been modified
     If search string is not None, then it will only parse Structures
     which have the search string in their details, making it faster
     If structureFile is specified, the structure list is saved to that file
     """
+    global nltk
+    # Make sure NLTK is imported
+    if 'nltk' not in sys.modules:
+        importNLTK()
+
     print("Parsing details with search string: \"{}\"...".format(searchString))
     count = 1
 
@@ -630,10 +636,10 @@ def parseAllDetails(structureList, searchString=None, structureFile=None):
         if structureList == []:
             print("No structures found with search string '{}'".format(searchString))
 
-    print("Parsing details of {} structures".format(len(structureList)))
+    print("Parsing details of {} structures...".format(len(structureList)))
     for structure in structureList:
         if count % 10000 == 0:
-            print("Parsing structure {} of {}".format(count, len(structureList)))
+            print("Parsing structure {} of {}...".format(count, len(structureList)))
         try:
             structure.parseDetails()
         except Exception as e:
@@ -660,6 +666,53 @@ def standardizeAllNames(structureList, structureFile=None): # void
     if structureFile != None:
         print("Writing to structure file {}...".format(structureFile))
         writeStructures(structureList, structureFile)
+
+def importNLTK():
+    """Handles importing the NLTK Module"""
+    global nltk
+    if 'nltk' not in sys.modules:
+        try:
+            import nltk
+            downloadPunkt()
+        except ModuleNotFoundError:
+            # Print traceback
+            for line in traceback.format_stack():
+                print(line.strip())
+
+            print("ERROR: NLTK module not found. You must install the NLTK module in order to parse the details of structures. "
+            "You may search through the database without NLTK, but you can not parse the details. "
+            "For more information, see https://github.com/maxdudek/crystallizationDatabase/wiki/Using-the-Database-Script#Installing_NLTK")
+            sys.exit()
+    else:
+        downloadPunkt()
+
+def downloadPunkt():
+    global nltk
+    """Attempt to download the 'punkt' package from nltk"""
+    try:
+        import nltk
+        nltk.data.find('tokenizers/punkt')
+    except LookupError:
+        try:
+            print("Attempting to download 'punkt' package from nltk...")
+            nltk.download('punkt')
+            print("Successfully downloaded 'punkt' package.")
+        except:
+            # Print traceback
+            for line in traceback.format_stack():
+                print(line.strip())
+
+            print("ERROR: The NLTK package 'punkt' could not be downloaded, and so you will be unable to parse details. For more information, "
+            "see https://github.com/maxdudek/crystallizationDatabase/wiki/Using-the-Database-Script#Installing_NLTK")
+            sys.exit()
+    except ModuleNotFoundError:
+        # Print traceback
+        for line in traceback.format_stack():
+            print(line.strip())
+
+        print("ERROR: You should never get this error. If you do, it means that "
+        "the script attempted to download the nltk 'punkt' package when nltk was not installed")
+        sys.exit()
 
 def updateSmilesDictionary(): # void
     """Adds newly recognized compounds in the compound dictionary as blank keys to the SMILES dictionary"""
@@ -872,127 +925,6 @@ def wordReplacement(s, replacementDictionary, debug=False):
             print(details+"\n")
     return details
 
-def loadPdb(pdbid): # ElementTree root
-    """Loads a pdbid as an xml file and returns the <root> branch"""
-    try:
-        response = requests.get("http://www.rcsb.org/pdb/rest/customReport.xml?pdbids="+pdbid+
-        "&customReportColumns=crystallizationMethod,crystallizationTempK,pdbxDetails,phValue,pmc,sequence,resolution&service=wsfile", timeout=10)
-    except requests.Timeout:
-        print("Request timeout on PDB: {}".format(pdbid))
-        return None
-    except KeyboardInterrupt:
-        print("HTTP Request interrupted - exiting program")
-        sys.exit()
-    #sleep(0.1) # Limit HTTP requests
-    root = etree.fromstring(response.content)
-    if (root.find("record") != None):
-        return root
-    else:
-        print("\n-------------------- ERROR --------------------\nNo entry found with PDB ID "
-        + str(pdbid)+"\n-----------------------------------------------\n")
-        return None
-
-def fetchStructures(pdbList, structureFile=STRUCTURES_FILE, onlyDetails=True, ignorePdbsWithoutDetails=True, ignoreCompletedPdbs=True, saveFrequency=100): # list
-    """Takes a list of pdbids and creates Structure objects for them, outputing them to structureFile
-    If onlyDetails is True the function will only output Structures that have crystallization details
-    If ignoreCompletedPdbs is True, then the function will read the Structure file and ignore Pdbs which already
-        have Structures associated with them
-    If ignoreCompletedPdbs is False, then the function will recheck and update every structure in the structure file
-    If ignorePdbsWithoutDetails is True then the function will ignore Pdbs from WITHOUT_DETAILS_FILE
-    saveFrequency is the number of pdbs downloaded before the files are saved
-        increasing this number makes the script faster, but more unsaved data is lost when the script is exited
-    """
-    count = 1
-    structureList = []
-
-    pdbsWithoutDetails = []
-    try:
-        print("Loading PDBs without details...")
-        pdbsWithoutDetails = loadJson(WITHOUT_DETAILS_FILE)
-    except:
-        print("File {} not found. One will be created.".format(WITHOUT_DETAILS_FILE))
-
-    completedPdbList = [] # List of Pdbs already turned into structures or without details
-    try:
-        structureList = loadStructures(structureFile)
-        if ignoreCompletedPdbs:
-            for struc in structureList:
-                completedPdbList.append(struc.pdbid)
-    except FileNotFoundError:
-        print("File {} not found. A new structure file will be created.".format(structureFile))
-
-    ignoredPdbList = []
-
-    if ignorePdbsWithoutDetails:
-        ignoredPdbList.extend(pdbsWithoutDetails)
-    # If ignoreCompletedPdbs=False, then completedPdbList will be empty
-    ignoredPdbList.extend(completedPdbList)
-
-    print("Removing completed pdbs (May take a minute)...")
-    pdbList = list(set(pdbList)-set(ignoredPdbList))
-
-    if pdbList == []:
-        print("All PDBs have been ignored. No more PDBs need to be downloaded.")
-
-    for pdbid in pdbList:
-        if count % 100 == 0 or count == 1:
-            print("Loading pdb {} of {}...".format(count, len(pdbList)))
-        root = loadPdb(pdbid)
-        count += 1
-        if (root != None):
-            details = root.find("record/dimStructure.pdbxDetails").text
-            if details == "null":
-                details = None
-                pdbsWithoutDetails.append(pdbid)
-                writeJson(pdbsWithoutDetails, WITHOUT_DETAILS_FILE)
-            if details != None or not onlyDetails:
-                pmcid = root.find("record/dimStructure.pmc").text
-                if (pmcid != "null"):
-                    pmcid = pmcid[3:]
-                else:
-                    pmcid = None
-                try:
-                    pH = float(root.find("record/dimStructure.phValue").text)
-                except ValueError:
-                    pH = None
-                try:
-                    temperature = float(root.find("record/dimStructure.crystallizationTempK").text)
-                except ValueError:
-                    temperature = None
-                method = root.find("record/dimStructure.crystallizationMethod").text
-                if method == "null":
-                    method = None
-                sequences = []
-                for tag in root.findall("record/dimEntity.sequence"):
-                    sequences.append(tag.text)
-                try:
-                    resolution = float(root.find("record/dimStructure.resolution").text)
-                except ValueError:
-                    resolution = None
-                structure = Structure(pdbid, pmcid, details, [], pH, temperature, method, sequences, resolution)
-                # If the pdb already has a structure in the list, update it
-                structureAlreadyInList = getStructure(structureList, structure.pdbid)
-                if structureAlreadyInList != None:
-                    structureList.remove(structureAlreadyInList)
-                structureList.append(structure)
-                if count % saveFrequency == 0:
-                    # Save structures
-                    writeStructures(structureList, structureFile)
-
-    writeStructures(structureList, structureFile)
-    print("Done fetching Structures")
-    return structureList
-
-def getAllPdbs(filename=""): # list
-    """Returns a list of every pdbid in the PDB
-    # filename = an optional argument to also export the list as a json file"""
-    response = requests.get("https://www.rcsb.org/pdb/json/getCurrent").text
-    dictionary = json.loads(response)
-    allPdbs = dictionary["idList"]
-    if filename != "":
-        writeJson(allPdbs, filename)
-    return allPdbs
-
 def loadStructures(structureFile=STRUCTURES_FILE): # list
     """Returns a list of structures from the pickled structure file"""
     print("Loading structures from file {}...".format(structureFile))
@@ -1022,6 +954,7 @@ def writeStructures(structureList, structureFile):
         print("Successfully wrote structures")
 
 if __name__ == "__main__":
+    # Insert your commands here
     structureList = loadStructures(STRUCTURES_FILE) # Must have a Structure File availible (see wiki)
     parseAllDetails(structureList, searchString=None, structureFile=STRUCTURES_FILE)
     standardizeAllNames(structureList, structureFile=STRUCTURES_FILE)

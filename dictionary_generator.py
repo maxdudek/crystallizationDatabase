@@ -1,7 +1,6 @@
 import json, csv, sys, pickle, collections, os
 from misc_functions import loadJson, writeJson, printList, getKey, listToFile, fileToList
-from pdb_crystal_database import Structure
-from pdb_crystal_database import loadStructures, parseAllDetails, writeStructures
+from pdb_crystal_database import loadStructures, parseAllDetails, writeStructures, Structure
 from pathlib import Path
 
 # Make sure directories exist
