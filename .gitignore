@@ -1,3 +1,4 @@
 *.pkl
 Output/*
 __pycache__/*
+chemicals_c3.xml

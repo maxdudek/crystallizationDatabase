@@ -1,0 +1,1020 @@
+{
+  "1,2,3-heptanetriol": [
+    "Bullet",
+    "Additive"
+  ],
+  "1,3 butanediol": [
+    "Organic",
+    "Additive"
+  ],
+  "1,3-propanediol": [
+    "Organic",
+    "Bullet",
+    "Additive"
+  ],
+  "1,4-butanediol": [
+    "Precipitant",
+    "Organic",
+    "Bullet",
+    "Additive"
+  ],
+  "1,4-dioxane": [
+    "Organic"
+  ],
+  "1,6-hexanediol": [
+    "Precipitant",
+    "Organic",
+    "Bullet",
+    "Additive"
+  ],
+  "1-oleoyl-rac-glycerol": [],
+  "1-pyridiniumpropane-3-sulfonate": [],
+  "2,2,2-trifluoroethanol": [
+    "Organic"
+  ],
+  "2,4,5-trimethylthiazole": [],
+  "2,5-hexanediol": [
+    "Organic"
+  ],
+  "2-hydroxyethyl disulfide": [],
+  "2-mercaptoethanol": [
+    "reductant"
+  ],
+  "2-propanol": [
+    "Organic"
+  ],
+  "ADA": [
+    "Buffer"
+  ],
+  "ADP": [
+    "Ligand"
+  ],
+  "AMP": [
+    "Ligand",
+    "Bullet",
+    "Additive"
+  ],
+  "AMP-PCP": [],
+  "AMP-PNP": [
+    "Bullet",
+    "Additive"
+  ],
+  "AMS": [
+    "Salt"
+  ],
+  "ATP": [
+    "Ligand",
+    "Bullet",
+    "Additive"
+  ],
+  "Arginine-HCl": [],
+  "BES": [
+    "Buffer"
+  ],
+  "CAPS": [
+    "Buffer"
+  ],
+  "CAPSO": [
+    "Buffer"
+  ],
+  "CHAPS": [
+    "Detergent-Zwitterionic",
+    "Detergent",
+    "Bullet",
+    "Additive"
+  ],
+  "CHAPSO": [
+    "Detergent-Zwitterionic",
+    "Detergent"
+  ],
+  "CHES": [
+    "Buffer"
+  ],
+  "CoA": [],
+  "DDM": [
+    "Detergent-Non Ionic",
+    "Detergent",
+    "Additive"
+  ],
+  "DDT": [],
+  "DMSO": [
+    "Organic",
+    "Additive"
+  ],
+  "DTE": [
+    "Bullet",
+    "Additive"
+  ],
+  "DTT": [
+    "reductant"
+  ],
+  "EDTA": [
+    "Additive"
+  ],
+  "EGTA": [
+    "Additive"
+  ],
+  "FAD": [
+    "Bullet",
+    "Additive"
+  ],
+  "FMN": [],
+  "GDP": [],
+  "GTP": [
+    "Ligand"
+  ],
+  "HEPES": [
+    "Buffer",
+    "Ambiguous"
+  ],
+  "HEPES-HCl": [],
+  "HEPES-KOH": [],
+  "HEPES-Na": [
+    "Buffer"
+  ],
+  "HEPES-NaOH": [
+    "Buffer"
+  ],
+  "HEPPS": [
+    "Buffer",
+    "Additive"
+  ],
+  "Imidazole-HCl": [
+    "Salt",
+    "Buffer"
+  ],
+  "LDAO": [
+    "Detergent-Non Ionic",
+    "Detergent",
+    "Additive"
+  ],
+  "MES": [
+    "Bullet",
+    "Buffer",
+    "Ambiguous",
+    "Additive"
+  ],
+  "MES-K": [],
+  "MES-KOH": [],
+  "MES-Na": [],
+  "MES-NaOH": [
+    "Buffer"
+  ],
+  "MOPS": [
+    "Buffer"
+  ],
+  "MOPS-Na": [],
+  "MOPSO": [
+    "Buffer"
+  ],
+  "MPD": [
+    "Organic",
+    "Additive"
+  ],
+  "MPEG 2000": [
+    "Polymer"
+  ],
+  "MPEG 4000": [],
+  "MPEG 5000": [
+    "Polymer"
+  ],
+  "MPEG 550": [
+    "Polymer"
+  ],
+  "NAD": [
+    "Ligand",
+    "Bullet",
+    "Additive"
+  ],
+  "NADH": [
+    "Bullet",
+    "Additive"
+  ],
+  "NADP": [
+    "Ligand",
+    "Bullet",
+    "Additive"
+  ],
+  "NADP+": [],
+  "NADPH": [
+    "Ligand",
+    "Bullet",
+    "Additive"
+  ],
+  "PCB": [
+    "Fundamental Mixtures",
+    "Buffer"
+  ],
+  "PCTP": [],
+  "PEG 1000": [
+    "Polymer"
+  ],
+  "PEG 10000": [
+    "Polymer"
+  ],
+  "PEG 12000": [
+    "Polymer"
+  ],
+  "PEG 1450": [
+    "Polymer"
+  ],
+  "PEG 1500": [
+    "Polymer"
+  ],
+  "PEG 1550": [
+    "Polymer"
+  ],
+  "PEG 200": [
+    "Polymer"
+  ],
+  "PEG 2000": [
+    "Polymer"
+  ],
+  "PEG 20000": [
+    "Polymer"
+  ],
+  "PEG 300": [
+    "Polymer"
+  ],
+  "PEG 3000": [
+    "Polymer"
+  ],
+  "PEG 3300": [
+    "Polymer"
+  ],
+  "PEG 3350": [
+    "Polymer"
+  ],
+  "PEG 3400": [
+    "Polymer"
+  ],
+  "PEG 350": [
+    "Polymer"
+  ],
+  "PEG 3500": [
+    "Polymer"
+  ],
+  "PEG 35000": [
+    "Polymer"
+  ],
+  "PEG 3550": [
+    "Polymer"
+  ],
+  "PEG 400": [
+    "Polymer"
+  ],
+  "PEG 4000": [
+    "Polymer"
+  ],
+  "PEG 4450": [
+    "Polymer"
+  ],
+  "PEG 500": [
+    "Polymer"
+  ],
+  "PEG 5000": [
+    "Polymer"
+  ],
+  "PEG 550": [
+    "Polymer"
+  ],
+  "PEG 600": [
+    "Polymer"
+  ],
+  "PEG 6000": [
+    "Polymer"
+  ],
+  "PEG 800": [
+    "Polymer"
+  ],
+  "PEG 8000": [
+    [
+      "Polymer"
+    ],
+    "Additive"
+  ],
+  "PEG 900": [
+    "Polymer"
+  ],
+  "PEG DME 200": [
+    "Polymer"
+  ],
+  "PEG MME 200": [
+    "Polymer"
+  ],
+  "PEG MME 2000": [
+    "Polymer"
+  ],
+  "PEG MME 3350": [
+    "Polymer"
+  ],
+  "PEG MME 350": [
+    "Polymer"
+  ],
+  "PEG MME 500": [
+    "Polymer"
+  ],
+  "PEG MME 5000": [
+    "Polymer"
+  ],
+  "PEG MME 550": [
+    "Polymer"
+  ],
+  "PEG MME 750": [
+    "Polymer"
+  ],
+  "PIPES": [
+    "Buffer"
+  ],
+  "PMSF": [],
+  "PVP K-15": [
+    "Polymer"
+  ],
+  "SAH": [],
+  "SAM": [],
+  "SDS": [
+    "Detergent-Ionic",
+    "Detergent"
+  ],
+  "TAPS": [
+    "Buffer"
+  ],
+  "TCEP": [
+    "reductant",
+    "Additive"
+  ],
+  "TCEP-HCl": [
+    "reductant",
+    "Additive"
+  ],
+  "TEA": [
+    "IL",
+    "Additive"
+  ],
+  "UDP-glucose": [],
+  "acetic acid": [
+    "Acid"
+  ],
+  "acetone": [
+    "Organic"
+  ],
+  "acetonitrile": [
+    "Organic"
+  ],
+  "acetyl-CoA": [
+    "Bullet",
+    "Additive"
+  ],
+  "adenosine": [
+    "Bullet",
+    "Additive"
+  ],
+  "alanine": [
+    "Bullet",
+    "Additive"
+  ],
+  "alpha-ketoglutarate": [
+    "Bullet",
+    "Additive"
+  ],
+  "ammonium acetate": [
+    "Salt"
+  ],
+  "ammonium chloride": [
+    "Salt"
+  ],
+  "ammonium citrate": [
+    "Ambiguous"
+  ],
+  "ammonium dihydrogen phosphate": [
+    "Salt"
+  ],
+  "ammonium fluoride": [
+    "Salt"
+  ],
+  "ammonium formate": [
+    "Salt"
+  ],
+  "ammonium hydrogen citrate": [],
+  "ammonium hydrogen phosphate": [],
+  "ammonium hydrogen tartrate": [],
+  "ammonium iodide": [
+    "Salt"
+  ],
+  "ammonium nitrate": [
+    "Salt"
+  ],
+  "ammonium phosphate": [
+    "Ambiguous"
+  ],
+  "ammonium sulfate": [
+    "Salt"
+  ],
+  "ammonium sulfite": [
+    "Salt"
+  ],
+  "ammonium tartrate": [
+    "Salt"
+  ],
+  "ammonium thiocyanate": [
+    "Salt",
+    "Additive"
+  ],
+  "azide": [
+    "Salt",
+    "Additive"
+  ],
+  "barium chloride": [
+    "Salt",
+    "Additive"
+  ],
+  "benzamidine": [
+    "Bullet",
+    "Additive"
+  ],
+  "benzamidine-HCl": [
+    "Bullet",
+    "Additive"
+  ],
+  "beryllium chloride": [],
+  "betaine": [
+    "Bullet",
+    "Additive"
+  ],
+  "bicine": [
+    "Buffer"
+  ],
+  "bicine-Na": [],
+  "bicine-NaOH": [
+    "Buffer"
+  ],
+  "bis-tris": [
+    "Buffer"
+  ],
+  "bis-tris methane": [],
+  "bis-tris propane": [
+    "Buffer"
+  ],
+  "bis-tris-HCl": [],
+  "boric acid": [
+    "Buffer"
+  ],
+  "cAMP": [
+    "Bullet",
+    "Additive"
+  ],
+  "cacodylic acid": [],
+  "cadmium(II) acetate": [
+    "Salt"
+  ],
+  "cadmium(II) chloride": [
+    "Salt"
+  ],
+  "cadmium(II) sulfate": [
+    "Salt"
+  ],
+  "calcium acetate": [
+    "Salt"
+  ],
+  "calcium chloride": [
+    "Salt",
+    "Bullet",
+    "Additive"
+  ],
+  "cesium chloride": [
+    "Salt"
+  ],
+  "cholesterol": [
+    "Bullet",
+    "Additive"
+  ],
+  "cisplatin": [],
+  "citric acid": [
+    "Salt"
+  ],
+  "cobalt(II) chloride": [
+    "Salt"
+  ],
+  "copper(II) chloride": [
+    "Salt"
+  ],
+  "copper(II) sulfate": [
+    "Salt"
+  ],
+  "cymal-6": [
+    "Detergent-Non Ionic",
+    "Detergent"
+  ],
+  "d-mannose": [
+    "Organic"
+  ],
+  "d-sorbitol": [
+    "Organic",
+    "Bullet",
+    "Additive"
+  ],
+  "d-xylose": [
+    "Organic"
+  ],
+  "diethylene glycol": [
+    "Organic"
+  ],
+  "dimethyl ether": [],
+  "disodium EDTA": [
+    "Additive"
+  ],
+  "dithiothreitol": [
+    "reductant"
+  ],
+  "ethanol": [
+    "Organic",
+    "Additive"
+  ],
+  "ethyl acetate": [
+    "Organic"
+  ],
+  "ethylene glycol": [
+    "Organic",
+    "Cryoprotectant"
+  ],
+  "fucose": [
+    "Organic"
+  ],
+  "galactose": [
+    "Organic",
+    "Additive"
+  ],
+  "glucose": [
+    "Cryoprotectant",
+    "Additive"
+  ],
+  "glutamatic acid": [],
+  "glutamine": [
+    "Bullet",
+    "Additive"
+  ],
+  "glutaraldehyde": [],
+  "glutathione": [
+    "Additive"
+  ],
+  "glycerol": [
+    "Organic",
+    "Additive"
+  ],
+  "glycerol ethoxylate": [
+    "Polymer"
+  ],
+  "glycine": [
+    "Salt",
+    "Bullet",
+    "Buffer",
+    "Additive"
+  ],
+  "guanidine hydrochloride": [
+    "Organic",
+    "Bullet",
+    "Additive"
+  ],
+  "guanidine-HCl": [
+    "Organic",
+    "Bullet",
+    "Additive"
+  ],
+  "hexaminecobalt(III) chloride": [
+    "Bullet",
+    "Additive"
+  ],
+  "hexammine cobalt(III) chloride": [
+    "Bullet",
+    "Additive"
+  ],
+  "hexamminecobalt(III) chloride": [
+    "Bullet",
+    "Additive"
+  ],
+  "hexanediol": [
+    "Precipitant",
+    "Organic",
+    "Bullet",
+    "Additive"
+  ],
+  "hydrochloric acid": [
+    "Acid"
+  ],
+  "imidazo[1,2-a]pyridine": [],
+  "imidazole": [
+    "Salt",
+    "Buffer"
+  ],
+  "imidazole malate": [
+    "Fundamental Mixtures",
+    "Buffer"
+  ],
+  "inositol": [
+    "Organic",
+    "Bullet",
+    "Additive"
+  ],
+  "isopropyl alcohol": [
+    "Organic"
+  ],
+  "jeffamine": [],
+  "jeffamine ed-2001": [
+    "Polymer"
+  ],
+  "jeffamine m-600": [
+    "Polymer"
+  ],
+  "l-arginine": [
+    "Bullet",
+    "Additive"
+  ],
+  "l-cysteine": [
+    "Organic",
+    "Additive"
+  ],
+  "lactose": [
+    "Bullet",
+    "Additive"
+  ],
+  "lithium acetate": [
+    "Salt"
+  ],
+  "lithium bromide": [
+    "Salt"
+  ],
+  "lithium chloride": [
+    "Salt"
+  ],
+  "lithium citrate": [
+    "Salt"
+  ],
+  "lithium nitrate": [
+    "Salt"
+  ],
+  "lithium sulfate": [
+    "Salt"
+  ],
+  "lysine hydrochloride": [],
+  "magnesium acetate": [
+    "Salt"
+  ],
+  "magnesium chloride": [
+    "Salt",
+    "Bullet",
+    "Additive"
+  ],
+  "magnesium formate": [
+    "Salt"
+  ],
+  "magnesium nitrate": [
+    "Salt"
+  ],
+  "magnesium sulfate": [
+    "Salt"
+  ],
+  "malic acid": [],
+  "malonic acid": [
+    "Salt"
+  ],
+  "maltose": [
+    "Organic",
+    "Cryoprotectant",
+    "Bullet",
+    "Additive"
+  ],
+  "manganese(II) chloride": [
+    "Salt",
+    "Bullet",
+    "Additive"
+  ],
+  "manganese(II) sulfate": [
+    "Salt"
+  ],
+  "methanol": [
+    "Organic"
+  ],
+  "methionine": [
+    "Bullet",
+    "Additive"
+  ],
+  "methylmercury acetate": [],
+  "n-(2-acetamido)iminodiacetic acid": [
+    "Buffer"
+  ],
+  "n-acetlyglucosamine": [],
+  "n-butanol": [
+    "Organic"
+  ],
+  "n-ethylglycine": [],
+  "n-propanol": [
+    "Organic"
+  ],
+  "nickel(II) chloride": [
+    "Salt"
+  ],
+  "octyl glucoside": [],
+  "ornithine": [],
+  "pdTp": [],
+  "pentaerythritol ethoxylate": [],
+  "pentaerythritol ethoxylate (15/4 EO/OH)": [
+    "Polymer"
+  ],
+  "pentaerythritol propoxylate": [],
+  "pentaerythritol propoxylate (5/4 PO/OH)": [
+    "Polymer"
+  ],
+  "pentaethyleneglycol": [
+    "Organic"
+  ],
+  "pga-lm": [
+    "Polymer"
+  ],
+  "phenol": [
+    "Bullet",
+    "Additive"
+  ],
+  "phosphate-citrate": [
+    "Fundamental Mixtures",
+    "Buffer"
+  ],
+  "polyacrylic acid 5100": [
+    "Polymer"
+  ],
+  "potassium acetate": [
+    "Salt"
+  ],
+  "potassium bromide": [
+    "Salt"
+  ],
+  "potassium cacodylate": [],
+  "potassium chloride": [
+    "Salt"
+  ],
+  "potassium citrate": [
+    "Ambiguous"
+  ],
+  "potassium dihydrogen phosphate": [
+    "Salt"
+  ],
+  "potassium fluoride": [
+    "Salt"
+  ],
+  "potassium formate": [
+    "Salt"
+  ],
+  "potassium hydrogen phosphate": [],
+  "potassium iodide": [
+    "Salt"
+  ],
+  "potassium nitrate": [
+    "Salt"
+  ],
+  "potassium oxonate": [],
+  "potassium phosphate": [
+    "Ambiguous"
+  ],
+  "potassium sodium phosphate": [
+    "Salt",
+    "Buffer"
+  ],
+  "potassium sodium tartrate": [
+    "Salt"
+  ],
+  "potassium sulfate": [
+    "Salt"
+  ],
+  "potassium tartrate": [
+    "Salt"
+  ],
+  "potassium thiocyanate": [
+    "Salt"
+  ],
+  "proline": [
+    "Bullet",
+    "Additive"
+  ],
+  "propane": [],
+  "propanol": [
+    "Organic"
+  ],
+  "propylene glycol": [
+    "Organic"
+  ],
+  "pyridoxal phosphate": [],
+  "rubidium chloride": [
+    "Salt",
+    "Additive"
+  ],
+  "s-adenosyl methionine": [
+    "Bullet",
+    "Additive"
+  ],
+  "sarcosine": [
+    "Bullet",
+    "Additive"
+  ],
+  "serine": [
+    "Bullet",
+    "Additive"
+  ],
+  "sodium acetate": [
+    "Salt"
+  ],
+  "sodium azide": [
+    "Salt",
+    "Additive"
+  ],
+  "sodium bicarbonate": [
+    "Salt"
+  ],
+  "sodium borate": [
+    "Salt",
+    "Bullet",
+    "Buffer",
+    "Additive"
+  ],
+  "sodium bromide": [
+    "Salt"
+  ],
+  "sodium cacodylate": [
+    "Buffer"
+  ],
+  "sodium chloride": [
+    "Salt"
+  ],
+  "sodium citrate": [
+    "Salt",
+    "Ambiguous"
+  ],
+  "sodium dihydrogen phosphate": [
+    "Salt",
+    "Buffer"
+  ],
+  "sodium dithionite": [
+    "Additive"
+  ],
+  "sodium fluoride": [
+    "Salt"
+  ],
+  "sodium formate": [
+    "Salt"
+  ],
+  "sodium hydrogen phosphate": [],
+  "sodium iodide": [
+    "Salt"
+  ],
+  "sodium malate": [
+    "Buffer"
+  ],
+  "sodium malonate": [
+    "Salt",
+    "Buffer"
+  ],
+  "sodium molybdate": [
+    "Salt"
+  ],
+  "sodium nitrate": [
+    "Salt"
+  ],
+  "sodium oxamate": [
+    "Salt"
+  ],
+  "sodium p-hydroxymercuribenzoate": [],
+  "sodium phosphate": [
+    "Ambiguous"
+  ],
+  "sodium polyacrylate": [],
+  "sodium pyruvate": [
+    "Bullet",
+    "Additive"
+  ],
+  "sodium succinate": [
+    "Salt"
+  ],
+  "sodium sulfate": [
+    "Salt"
+  ],
+  "sodium tartrate": [
+    "Salt"
+  ],
+  "sodium thiocyanate": [
+    "Salt"
+  ],
+  "sodium thiosulfate": [],
+  "spermidine": [
+    "Bullet",
+    "Additive"
+  ],
+  "spermine": [
+    "Organic",
+    "Bullet",
+    "Additive"
+  ],
+  "spermine tetrahydrochloride": [
+    "Organic",
+    "Additive"
+  ],
+  "spermine-HCl": [],
+  "staurosporine": [
+    "Ligand"
+  ],
+  "strontium chloride": [
+    "Salt"
+  ],
+  "succinic acid": [
+    "Salt"
+  ],
+  "sucrose": [
+    "Organic",
+    "Cryoprotectant",
+    "Additive"
+  ],
+  "taurine": [
+    "Bullet",
+    "Additive"
+  ],
+  "tert-butyl alcohol": [
+    "Organic"
+  ],
+  "tetraethylene glycol": [
+    "Organic"
+  ],
+  "thymidine diphosphate": [],
+  "trehalose": [
+    "Organic",
+    "Cryoprotectant",
+    "Bullet",
+    "Additive"
+  ],
+  "triethanolamine": [
+    "Buffer"
+  ],
+  "triethanolamine-HCl": [],
+  "triethylene glycol": [
+    "Organic"
+  ],
+  "trimethylamine n-oxide": [
+    "Organic",
+    "Bullet",
+    "Additive"
+  ],
+  "tris": [
+    "Buffer",
+    "Ambiguous"
+  ],
+  "tris-HCl": [
+    "Buffer"
+  ],
+  "tris-acetate": [
+    "Buffer"
+  ],
+  "tris-maleate": [
+    "Fundamental Mixtures",
+    "Buffer"
+  ],
+  "tris-sulfate": [
+    "Buffer"
+  ],
+  "triton x-100": [
+    "Detergent-Non Ionic",
+    "Detergent"
+  ],
+  "tryptone": [
+    "Fundamental Mixtures",
+    "Bullet",
+    "Additive"
+  ],
+  "tryptophan": [
+    "Bullet",
+    "Additive"
+  ],
+  "uranyl acetate": [],
+  "urea": [
+    "Bullet",
+    "Additive"
+  ],
+  "uridine diphosphate": [
+    "Bullet",
+    "Additive"
+  ],
+  "xylitol": [
+    "Cryoprotectant",
+    "Additive"
+  ],
+  "ytterbium(III) chloride": [
+    "Salt"
+  ],
+  "yttrium(III) chloride": [
+    "Salt"
+  ],
+  "zinc(II) acetate": [
+    "Salt"
+  ],
+  "zinc(II) chloride": [
+    "Salt"
+  ],
+  "zinc(II) sulfate": [
+    "Salt"
+  ]
+}

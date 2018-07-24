@@ -1,4 +1,4 @@
-import sys, json, pickle, operator, traceback, os
+import sys, json, pickle, operator, traceback, os, csv
 from misc_functions import loadJson, writeJson, printList, fileToList, listToFile, getKey
 from time import sleep
 from collections import OrderedDict
@@ -24,6 +24,8 @@ UNKNOWN_LIST_FILE = INPUT_DIR / "unknown_list.json"
 LOWERCASE_REPLACEMENT_FILE = INPUT_DIR / "replacementLowercase.json"
 SENSITIVE_REPLACEMENT_FILE = INPUT_DIR / "replacementSensitive.json"
 MIXTURES_FILE = INPUT_DIR / "mixture_compounds.json"
+CLASSIFICATION_FILE = INPUT_DIR / "classification_dictionary.json"
+C3_CHEMICALS_FILE = INPUT_DIR / "c3_chemicals.json"
 
 # Structure Files - serialized binary files containing a list of Structure objects
 STRUCTURES_FILE = STRUCTURE_DIR / "structures.pkl" # The database file. Must be placed in proper location
@@ -37,6 +39,7 @@ UNKNOWN_DETAILS_FILE = OUTPUT_DIR / "unknown_details.txt"
 COMPOUND_FREQUENCY_FILE = OUTPUT_DIR / "compound_frequency.txt"
 UNKNOWN_FREQUENCY_FILE = OUTPUT_DIR / "unknown_frequency.txt"
 PENDING_FREQUENCY_FILE = OUTPUT_DIR / "pending_frequency.txt"
+CSV_FILE = OUTPUT_DIR / "sensible_structures.csv"
 
 # Load lists and dictionaries from files
 print("Loading input files...")
@@ -47,6 +50,8 @@ try:
     lowercaseReplacement = loadJson(LOWERCASE_REPLACEMENT_FILE, object_pairs_hook=OrderedDict)
     sensitiveReplacement = loadJson(SENSITIVE_REPLACEMENT_FILE, object_pairs_hook=OrderedDict)
     mixturesDictionary = loadJson(MIXTURES_FILE)
+    c3Chemicals = loadJson(C3_CHEMICALS_FILE)
+    classificationDictionary = loadJson(CLASSIFICATION_FILE)
     STOP_WORDS = set(loadJson(STOP_WORDS_FILE)) - {'m'} - {'am'}
 except FileNotFoundError as notFound:
     print(notFound)
@@ -601,6 +606,13 @@ class Structure:
                         runAgain = True
                         break
 
+                    # Remove duplicate compounds
+                    if self.compounds[i] in self.compounds[:i:2]: # If compound has appeared before
+                        locationOfFirstCompound = self.compounds.index(self.compounds[i], 0, i)
+                        del self.compounds[locationOfFirstCompound:locationOfFirstCompound+2] # Remove first compound
+                        runAgain = True
+                        break
+
     def hasUnknown(self): # boolean
         """returns True if the structure has a compound in the unknownList"""
         for compound in self.compounds[::2]:
@@ -656,7 +668,7 @@ def standardizeAllNames(structureList, structureFile=None): # void
     Also parses mixture compounds, which are mixtures of multiple compounds (e.g Molecular Dimensions Buffers)
     If structureFile is specified, the structure list is saved to that file
     """
-    updateSmilesDictionary() # Also calls updateDictionary
+    updateMiscDictionaries() # Also calls updateDictionary
     print("Standardizing chemical names...")
     for structure in structureList:
         try:
@@ -714,14 +726,48 @@ def downloadPunkt():
         "the script attempted to download the nltk 'punkt' package when nltk was not installed")
         sys.exit()
 
-def updateSmilesDictionary(): # void
-    """Adds newly recognized compounds in the compound dictionary as blank keys to the SMILES dictionary"""
+def updateMiscDictionaries(): # void
+    """Adds newly recognized compounds in the compound dictionary as blank keys to the SMILES dictionary and to the classificationDictionary
+    Also removes unessicary entries from these dictionaries"""
     updateDictionary()
-    print("Updating SMILES dictionary...")
+    print("Updating misc. dictionaries...")
+
+    # Add new compounds to dictionaries
     for compound in set(compoundDictionary.values()):
         if compound not in smilesDictionary:
             smilesDictionary[compound] = ""
+
+    for compound in set(compoundDictionary.values()):
+        if compound not in classificationDictionary:
+            classificationDictionary[compound] = []
+            for c3Compound in c3Chemicals: # Check C3 chemicals for classification
+                if getKey(compound) in [getKey(s) for s in c3Chemicals[c3Compound]['names']]:
+                    classificationDictionary[compound] = c3Chemicals[c3Compound]['classifications']
+                    break
+
+    # Remove mixture compounds from dictionaries
+    for compound in set(compoundDictionary.values()):
+        if " / " in compound or compound in mixturesDictionary:
+            smilesDictionary.pop(compound, None)
+            classificationDictionary.pop(compound, None)
+
+    # Remove elements that are not in the compound dictionary
+    for compound in set(smilesDictionary.keys()) | set(classificationDictionary.keys()):
+        if compound not in compoundDictionary.values() and (compound in smilesDictionary or compound in classificationDictionary):
+            smilesDictionary.pop(compound, None)
+            classificationDictionary.pop(compound, None)
+
+    # Autoclassify some compounds
+    for compound in classificationDictionary:
+        if classificationDictionary[compound] == []:
+            if (compound[:4] == "PEG " or compound[:4] == "MPEG "):
+                classificationDictionary[compound] = ['Polymer']
+            if "(II)" in compound or "(III)" in compound or "(I)" in compound:
+                classificationDictionary[compound] = ['Salt']
+
+    # Save dictionaries to files
     writeJson(smilesDictionary, SMILES_DICTIONARY_FILE, indent=2, sort_keys=True)
+    writeJson(classificationDictionary, CLASSIFICATION_FILE, indent=2, sort_keys=True)
 
 def getSensibleStructures(structureList):
     """Returns a list of structures that make sense
@@ -832,6 +878,29 @@ def exportOutputFiles(structureList):
     compoundFrequency = getCompoundFrequencies(sensibleStructureList, outputFilename=COMPOUND_FREQUENCY_FILE)
     unknownFrequency = getCompoundFrequencies(structureList, outputFilename=UNKNOWN_FREQUENCY_FILE, mode="unknown")
     pendingFrequency = getCompoundFrequencies(structureList, outputFilename=PENDING_FREQUENCY_FILE, mode="pending")
+    exportCsv(sensibleStructureList, filename=CSV_FILE)
+
+def exportCsv(structureList, filename=CSV_FILE):
+    """Exports a csv file of all of the information in a list of structures"""
+    print("Exporting csv file to {}...".format(filename))
+    outputList = []
+    for structure in structureList:
+        row = [str(structure.pdbid), str(structure.pmcid), str(structure.method).replace(',',''), str(structure.resolution), str(structure.temperature), str(structure.pH)]
+        for compound in structure.compounds:
+            if compound != None:
+                row.append(compound)
+            else:
+                row.append('None')
+        while len(row) < 30: # Pad empty compound elements (6 columns + (12 compounds*2) = 30)
+            row.append("---")
+        for sequence in structure.sequences:
+            row.append(sequence)
+        outputList.append(row)
+
+    with open(filename, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile, dialect='excel-tab', delimiter="\t")
+        writer.writerows(outputList)
+
 
 def getDatabaseSubset(structureList, pdbidList, sensibleOnly=True, structureFile=None):
     """Takes a list of PDB IDs and returns a list of structure files associated with them
@@ -956,16 +1025,22 @@ def writeStructures(structureList, structureFile):
 if __name__ == "__main__":
     # Insert your commands here
     structureList = loadStructures(STRUCTURES_FILE) # Must have a Structure File availible (see wiki)
-    parseAllDetails(structureList, searchString=None, structureFile=STRUCTURES_FILE)
-    standardizeAllNames(structureList, structureFile=STRUCTURES_FILE)
-    exportOutputFiles(structureList)
-    # sensibleStructureList = loadStructures(SENSIBLE_STRUCTURES_FILE)
+    # parseAllDetails(structureList, searchString=None, structureFile=STRUCTURES_FILE)
+    # standardizeAllNames(structureList, structureFile=STRUCTURES_FILE)
+    # exportOutputFiles(structureList)
+
+    updateMiscDictionaries()
+
     # maxCompounds = 3
     # for structure in sensibleStructureList:
-    #     if len(structure.compounds) / 2 > maxCompounds and "tacsimate" not in structure.details.lower():
+    #     if len(structure.compounds) / 2 > maxCompounds:
     #         maxStructure = structure
     #         maxCompounds = len(structure.compounds) / 2
     # print(maxCompounds)
     # print(maxStructure.details)
     # print(maxStructure.compounds)
+
+
+
+
     # getStructure(structureList, "7ICE").parseDetails(debug=True)
