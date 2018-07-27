@@ -4,12 +4,15 @@ from pdb_crystal_database import loadStructures, parseAllDetails, writeStructure
 from pathlib import Path
 
 # Make sure directories exist
+if not os.path.exists("Output"):
+    os.makedirs("Output")
 if not os.path.exists("Structures"):
     os.makedirs("Structures")
 
 # Create Path objects for directories
 INPUT_DIR = Path("Input/")
 STRUCTURE_DIR = Path("Structures/")
+OUTPUT_DIR = Path("Output/")
 
 # Configure input locations
 COMPOUND_DICTIONARY_FILE = INPUT_DIR / "compound_dictionary.json"
@@ -17,6 +20,8 @@ UNKNOWN_LIST_FILE = INPUT_DIR / "unknown_list.json"
 STOP_WORDS_FILE = INPUT_DIR / "stop_words.json"
 
 STRUCTURES_FILE = STRUCTURE_DIR / "structures.pkl"
+
+COMPRESSED_DICTIONARY_FILE = OUTPUT_DIR / "compressed_dictionary.json"
 
 # Define input options
 INPUT_SAME = "=" # Add the compound to the dictionary exactly as it appears (e.g. "sodium chloride" --> "sodium chloride")
@@ -65,10 +70,26 @@ def getCompoundList(structureList, sortedByFrequency=True, useGetKey=False): # l
         compoundList.extend(structure.compounds[0::2])
     if useGetKey:
         compoundList = [getKey(compound) for compound in compoundList if compoundList]
-    counts = collections.Counter(compoundList)
     if sortedByFrequency:
+        counts = collections.Counter(compoundList)
         compoundList = sorted(compoundList, key=lambda x: -counts[x])
     return compoundList
+
+def getCompressedDictionary(dictionary, filename=None):
+    """Takes a dictionary and returns a 'compressed' dictionary
+    where every unique value in the original dictionary maps to a list of all keys which map to that value
+    If filename is not None, then the output will be written to the specified json file"""
+    outputDictionary = {}
+    for value in set(dictionary.values()):
+        outputDictionary[value] = []
+
+    for key in dictionary:
+        outputDictionary[dictionary[key]].append(key)
+
+    if filename != None:
+        writeJson(outputDictionary, filename, indent=2, sort_keys=True)
+
+    return outputDictionary
 
 def printRecognizedCompounds(compoundList):
     """Prints out how many compounds are recognized, out of the total compounds"""
@@ -216,8 +237,9 @@ def generateDictionary(compoundList, autoSave=True, autoAdd=True): # dictionary
 
 if __name__ == "__main__":
     structureList = loadStructures(STRUCTURES_FILE)
+    # getCompressedDictionary(compoundDictionary, COMPRESSED_DICTIONARY_FILE)
     # parseAllDetails(structureList)
     # writeStructures(structureList, STRUCTURES_FILE)
-    compoundList = getCompoundList(structureList, useGetKey=False)
-    generateDictionary(compoundList)
+    # compoundList = getCompoundList(structureList, useGetKey=False)
+    # generateDictionary(compoundList)
     # printRecognizedCompounds(compoundList)

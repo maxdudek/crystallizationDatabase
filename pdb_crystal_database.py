@@ -1,4 +1,4 @@
-import sys, json, pickle, operator, traceback, os, csv
+import sys, json, pickle, operator, traceback, os, csv, itertools
 from misc_functions import loadJson, writeJson, printList, fileToList, listToFile, getKey
 from time import sleep
 from collections import OrderedDict
@@ -36,10 +36,19 @@ DETAILS_FILE = OUTPUT_DIR / "details.txt"
 SENSIBLE_DETAILS_FILE = OUTPUT_DIR / "sensible_details.txt"
 NON_SENSIBLE_DETAILS_FILE = OUTPUT_DIR / "nonsensible_details.txt"
 UNKNOWN_DETAILS_FILE = OUTPUT_DIR / "unknown_details.txt"
+
 COMPOUND_FREQUENCY_FILE = OUTPUT_DIR / "compound_frequency.txt"
 UNKNOWN_FREQUENCY_FILE = OUTPUT_DIR / "unknown_frequency.txt"
 PENDING_FREQUENCY_FILE = OUTPUT_DIR / "pending_frequency.txt"
+SET_FREQUENCY_FILE = OUTPUT_DIR / "set_frequency.txt"
+
+COMPOUND_FREQUENCY_CSV_FILE = OUTPUT_DIR / "compound_frequency.csv"
+UNKNOWN_FREQUENCY_CSV_FILE = OUTPUT_DIR / "unknown_frequency.csv"
+PENDING_FREQUENCY_CSV_FILE = OUTPUT_DIR / "pending_frequency.csv"
+SET_FREQUENCY_CSV_FILE = OUTPUT_DIR / "set_frequency.csv"
+
 CSV_FILE = OUTPUT_DIR / "sensible_structures.csv"
+COMPRESSED_DICTIONARY_FILE = OUTPUT_DIR / "compressed_dictionary.json"
 
 # Load lists and dictionaries from files
 print("Loading input files...")
@@ -609,9 +618,14 @@ class Structure:
                     # Remove duplicate compounds
                     if self.compounds[i] in self.compounds[:i:2]: # If compound has appeared before
                         locationOfFirstCompound = self.compounds.index(self.compounds[i], 0, i)
-                        del self.compounds[locationOfFirstCompound:locationOfFirstCompound+2] # Remove first compound
-                        runAgain = True
-                        break
+                        if self.compounds[i+1] == None and self.compounds[locationOfFirstCompound+1] != None: # If only the first compound has a concentrations
+                            del self.compounds[i:i+2] # Remove the second compound
+                            runAgain = True
+                            break
+                        else:
+                            del self.compounds[locationOfFirstCompound:locationOfFirstCompound+2] # Remove first compound
+                            runAgain = True
+                            break
 
     def hasUnknown(self): # boolean
         """returns True if the structure has a compound in the unknownList"""
@@ -760,7 +774,7 @@ def updateMiscDictionaries(): # void
     # Autoclassify some compounds
     for compound in classificationDictionary:
         if classificationDictionary[compound] == []:
-            if (compound[:4] == "PEG " or compound[:4] == "MPEG "):
+            if (compound[:4] == "PEG " or compound[:5] == "MPEG "):
                 classificationDictionary[compound] = ['Polymer']
             if "(II)" in compound or "(III)" in compound or "(I)" in compound:
                 classificationDictionary[compound] = ['Salt']
@@ -812,9 +826,10 @@ def exportDetails(structureList, outputFilename):
             outputList.append(structure.compounds)
     listToFile(outputList, outputFilename)
 
-def getCompoundFrequencies(structureList, outputFilename=None, mode="recognized"):
+def getCompoundFrequencies(structureList, textFilename=None, csvFilename=None, mode="recognized"):
     """Takes a list of structures and returns a dictionary mapping compounds to their frequency
-    If outputFilename != None, it also outputs compound frequency to a txt file
+    If textFilename != None, it also outputs compound frequency to an easily readable txt file
+    If csvFilename != None, then it also exports compound frequency to a TAB-DELIMITED csv file
     Mode = "recognized": only export compounds found in the dictionary
     Mode = "unknown": only export compounds found in unknownList
     Mode = "pending": only export compounds in neither dictionary nor unknown list, pending classification
@@ -822,7 +837,7 @@ def getCompoundFrequencies(structureList, outputFilename=None, mode="recognized"
     global compoundDictionary
     global smilesDictionary
 
-    print("Exporting compound frequencies to \"{}\"...".format(outputFilename))
+    print("Exporting compound frequencies to \"{}\"...".format(textFilename))
     outputDictionary = {"Total Compounds": 0}
     if mode == "recognized":
         for structure in structureList:
@@ -858,11 +873,86 @@ def getCompoundFrequencies(structureList, outputFilename=None, mode="recognized"
                     outputDictionary["Total Compounds"] += 1
 
     # Export
-    if outputFilename != None:
+    if textFilename != None:
         outputList = []
         for key, value in sorted(outputDictionary.items(), key=operator.itemgetter(1), reverse=True):
             outputList.append("{:30s}: {:20d}".format(key, value))
-        listToFile(outputList, outputFilename)
+        listToFile(outputList, textFilename)
+
+    if csvFilename != None:
+        outputList = []
+        for key, value in sorted(outputDictionary.items(), key=operator.itemgetter(1), reverse=True):
+            outputList.append([key, value])
+        with open(csvFilename, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile, dialect='excel-tab', delimiter="\t")
+            writer.writerows(outputList)
+
+    return outputDictionary
+
+def getSetFrequencies(structureList, textFilename=None, csvFilename=None, requiredCompounds=None, subsetLength=None):
+    """Takes a compound list and outputs a dictionary of the frequencies of each set of compounds
+        The dictionary maps a frozenset of compounds to its frequency as an integer.
+    If textFilename != None, then it will also export the dictionary to an easily readable text file
+    If csvFilename != None, then it also exports compound frequency to a TAB-DELIMITED csv file
+    If requiredCompounds != None, then it will only find sets that contain a specific compound
+    If subsetLength != None, then teh function will calculate the frequency of SUBSETS of length 'subsetLength'
+        For example, if subsetLength = 3, the function will calculate the frequency of the most common 3 element subsets
+        This means that a frequency count for the set 'HEPES', 'ammonium sulfate', and 'PEG 3350' will include
+        the frequency of ANY set which contains those three elements"""
+    if textFilename != None or csvFilename != None:
+        print("Exporting set frequencies to {} and {}...".format(textFilename, csvFilename))
+
+    outputDictionary = {}
+
+    if type(requiredCompounds) == str:
+        structureList = [s for s in structureList if requiredCompounds in s.compounds[::2]]
+    elif type(requiredCompounds) == list:
+        for requiredCompound in requiredCompounds:
+            structureList = [s for s in structureList if requiredCompound in s.compounds[::2]]
+
+    for structure in structureList:
+        compoundSet = frozenset(structure.compounds[::2])
+        if compoundSet in outputDictionary:
+            outputDictionary[compoundSet] += 1
+        else:
+            outputDictionary[compoundSet] = 1
+
+    if subsetLength != None:
+        newOutputDictionary = {}
+        setOfAllSubsets = frozenset([])
+        for s in outputDictionary: # Build a set of all subsets
+            setOfAllSubsets = setOfAllSubsets | frozenset(itertools.combinations(s, subsetLength))
+
+        # Clean up the set
+        setOfAllSubsets = frozenset([frozenset(s) for s in setOfAllSubsets])
+
+        count = 0
+        for subset in setOfAllSubsets:
+            if subset not in newOutputDictionary:
+                count += 1
+                if count % 5000 == 0:
+                    print("Working on subset {} of {}: {}".format(count, len(setOfAllSubsets), str(subset)))
+                listOfSupersets = [s for s in outputDictionary.keys() if s.issuperset(subset)]
+                frequency = 0
+                for superset in listOfSupersets:
+                    frequency += outputDictionary[superset]
+                newOutputDictionary[subset] = frequency
+        outputDictionary = newOutputDictionary
+
+    # Export
+    if textFilename != None:
+        outputList = []
+        for key, value in sorted(outputDictionary.items(), key=operator.itemgetter(1), reverse=True):
+            outputList.append("{:80s}: {:20d}".format(printList(list(key)), value))
+        listToFile(outputList, textFilename)
+
+    if csvFilename != None:
+        outputList = []
+        for key, value in sorted(outputDictionary.items(), key=operator.itemgetter(1), reverse=True):
+            outputList.append([printList(list(key)), value])
+        with open(csvFilename, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile, dialect='excel-tab', delimiter="\t")
+            writer.writerows(outputList)
 
     return outputDictionary
 
@@ -875,12 +965,16 @@ def exportOutputFiles(structureList):
     exportDetails(structureList, DETAILS_FILE)
     exportDetails(getUnknowns(structureList), UNKNOWN_DETAILS_FILE)
     exportDetails(nonsensibleStructureList, NON_SENSIBLE_DETAILS_FILE)
-    compoundFrequency = getCompoundFrequencies(sensibleStructureList, outputFilename=COMPOUND_FREQUENCY_FILE)
-    unknownFrequency = getCompoundFrequencies(structureList, outputFilename=UNKNOWN_FREQUENCY_FILE, mode="unknown")
-    pendingFrequency = getCompoundFrequencies(structureList, outputFilename=PENDING_FREQUENCY_FILE, mode="pending")
-    exportCsv(sensibleStructureList, filename=CSV_FILE)
+    compoundFrequency = getCompoundFrequencies(sensibleStructureList, textFilename=COMPOUND_FREQUENCY_FILE, csvFilename=COMPOUND_FREQUENCY_CSV_FILE)
+    unknownFrequency = getCompoundFrequencies(structureList, textFilename=UNKNOWN_FREQUENCY_FILE, csvFilename=UNKNOWN_FREQUENCY_CSV_FILE, mode="unknown")
+    pendingFrequency = getCompoundFrequencies(structureList, textFilename=PENDING_FREQUENCY_FILE, csvFilename=PENDING_FREQUENCY_CSV_FILE, mode="pending")
+    setFrequency = getSetFrequencies(sensibleStructureList, textFilename=SET_FREQUENCY_FILE, csvFilename=SET_FREQUENCY_CSV_FILE)
+    try:
+        exportCsv(sensibleStructureList, filename=CSV_FILE)
+    except PermissionError:
+        print("Could not write to {}. Maybe the file is open in another program such as Excel?".format(CSV_FILE))
 
-def exportCsv(structureList, filename=CSV_FILE):
+def exportCsv(structureList, filename):
     """Exports a csv file of all of the information in a list of structures"""
     print("Exporting csv file to {}...".format(filename))
     outputList = []
@@ -1005,31 +1099,37 @@ def loadStructures(structureFile=STRUCTURES_FILE): # list
         print("ERROR: Structure file {} not found".format())
         sys.exit()
 
-def writeStructures(structureList, structureFile):
-    """Writes a list of structures to a pickle file"""
+def writeStructures(structureList, structureFile, count=0):
+    """Writes a list of structures to a pickle file
+    count keeps track of how many times the function has had to wait to write"""
+    if count > 5:
+        print("ERROR: Permission denied {} times when trying to write structures to {}".format(count-1, structureFile))
+        return None
     try:
         with open(structureFile, "wb") as f:
             pickle.dump(structureList, f)
+            if count > 0:
+                print("Successfully wrote structures")
+            return True
     except KeyboardInterrupt:
         print("Keyboard interrupt detected. Writing to file...")
         with open(structureFile, "wb") as f:
             pickle.dump(structureList, f)
         sys.exit()
     except PermissionError:
-        print("Permission denied when attempting to write structures. Waiting and trying again...")
-        sleep(5)
-        with open(structureFile, "wb") as f:
-            pickle.dump(structureList, f)
-        print("Successfully wrote structures")
+        if count == 0:
+            print("Permission denied when attempting to write structures. Waiting and trying again...")
+        sleep(3)
+        nextTry = writeStructures(structureList, structureFile, count=count+1)
+        return nextTry
 
 if __name__ == "__main__":
     # Insert your commands here
     structureList = loadStructures(STRUCTURES_FILE) # Must have a Structure File availible (see wiki)
     # parseAllDetails(structureList, searchString=None, structureFile=STRUCTURES_FILE)
     # standardizeAllNames(structureList, structureFile=STRUCTURES_FILE)
-    # exportOutputFiles(structureList)
-
-    updateMiscDictionaries()
+    exportOutputFiles(structureList)
+    getSetFrequencies(sensibleStructureList, csvFilename="Output\\pairs_frequency.csv", subsetLength=2)
 
     # maxCompounds = 3
     # for structure in sensibleStructureList:
@@ -1040,6 +1140,13 @@ if __name__ == "__main__":
     # print(maxStructure.details)
     # print(maxStructure.compounds)
 
+    # Get number of PEG compounds
+    # count = 0
+    # for structure in sensibleStructureList:
+    #     for c in structure.compounds[::2]:
+    #         if c[:4] == "PEG ":
+    #             count += 1
+    # print("Number of PEG compounds: {}".format(count))
 
 
 
