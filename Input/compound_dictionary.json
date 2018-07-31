@@ -21,6 +21,7 @@
   "trishcl": "tris-HCl",
   "ethyleneglycol": "ethylene glycol",
   "lithiumchloride": "lithium chloride",
+  "citratephosphate": "sodium phosphate / citric acid",
   "citricacid": "citric acid",
   "cacl2": "calcium chloride",
   "cacodylicacid": "cacodylic acid",
@@ -704,5 +705,6 @@
   "butanol": "tert-butyl alcohol",
   "ltryptophan": "tryptophan",
   "tryptophan": "tryptophan",
-  "p3350": "PEG 3350"
+  "p3350": "PEG 3350",
+  "sodiumphosphatecitricacid": "sodium phosphate / citric acid"
 }

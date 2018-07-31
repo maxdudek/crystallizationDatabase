@@ -1126,11 +1126,20 @@ def writeStructures(structureList, structureFile, count=0):
 if __name__ == "__main__":
     # Insert your commands here
     structureList = loadStructures(STRUCTURES_FILE) # Must have a Structure File availible (see wiki)
-    # parseAllDetails(structureList, searchString=None, structureFile=STRUCTURES_FILE)
-    # standardizeAllNames(structureList, structureFile=STRUCTURES_FILE)
+    parseAllDetails(structureList, searchString=None, structureFile=STRUCTURES_FILE)
+    standardizeAllNames(structureList, structureFile=STRUCTURES_FILE)
     exportOutputFiles(structureList)
-    getSetFrequencies(sensibleStructureList, csvFilename="Output\\pairs_frequency.csv", subsetLength=2)
 
+    # Get most common partners
+    # listOfMostFrequentCompounds = sorted(compoundFrequency.items(), key=operator.itemgetter(1), reverse=True)[1:11]
+    # for c, freq in listOfMostFrequentCompounds:
+    #     print("Getting '{}'".format(c))
+    #     setFrequency = getSetFrequencies(sensibleStructureList, requiredCompounds=c, subsetLength=2)
+    #     mostCommonSubsets = sorted(setFrequency.items(), key=operator.itemgetter(1), reverse=True)[:3]
+    #     for p, f in mostCommonSubsets:
+    #         print("\t{} - Frequency: {}".format(p, f))
+
+    # Get max number of compounds
     # maxCompounds = 3
     # for structure in sensibleStructureList:
     #     if len(structure.compounds) / 2 > maxCompounds:
@@ -1148,6 +1157,5 @@ if __name__ == "__main__":
     #             count += 1
     # print("Number of PEG compounds: {}".format(count))
 
-
-
+    # Debug parseDetails
     # getStructure(structureList, "7ICE").parseDetails(debug=True)

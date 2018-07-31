@@ -148,8 +148,6 @@ if __name__ == "__main__":
     allPdbs = getAllPdbs()
     fetchStructures(allPdbs)
 
-
-
     # outputDictionary = {}
     # xmlroot = etree.parse('chemicals_c3.xml').getroot()
     # chemtag = xmlroot.find('chemicals')
