@@ -6,6 +6,17 @@ This Python package contains tools for building and searching a database of crys
 * Standardization of chemical names by a dictionary of compounds
 * Application to dynamically build and improve the dictionary
 
+The crystallization database is stored as a list of Python objects serialized to a binary file (with a `.pkl` extension*). The Python objects come from the Structure class, and contain information including PDB ID, sequences, and crystallization details. They are created by pulling the information of every structure from the PDB which contains relevant crystallization details (~113k structures). A “detail parsing function” is used to turn the raw plain English details in the PDB into a consistently formatted list of chemical compounds and their concentration, which is also stored as part of the Structure objects. A compound dictionary was also built to map the most commonly extracted compound names (about 680 of them) to a set of unique standardized names (~350) for consistency. All compound names which appear more than 30 times in the PDB are recognized, and they account for 88% of all compound names which are extracted by the detail parsing function.
+ 
+Of the 113k structures with chemical details, over 88k (77%) are “sensible” – that is, all of the compounds which were extracted from the crystallization details are recognized by the compound dictionary. The “sensible structures” database is the database which should be used for analysis, as complete recognition by the dictionary is a sign that the detail parsing function performed as expected, and correctly extracted the reservoir compounds. The structures which are not “sensible” may be so for a few reasons:
+1. They contain uncommon compounds which are not yet recognized by the dictionary – these compounds, many of which are the name of the protein itself, must be added manually, which is time consuming
+2. The detail parsing function can not properly extract compounds from the details due to unexpected syntax, spacing, or punctuation
+3. The details field contains a mistake, typo, or a lack of sufficient details.
+
+For more details and results from the project, see the project poster in `project_poster.pdf`.
+
 For more information on how to use the package see the [Wiki](https://github.com/maxdudek/crystallizationDatabase/wiki).
 
 Contact Max Dudek at max.dudek@pitt.edu if you have any questions.
+
+\* The database file is too large to include in the repository. See the Wiki for more information about downloading it.
