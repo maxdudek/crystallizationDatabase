@@ -3,6 +3,8 @@ from misc_functions import loadJson, writeJson, printList, fileToList, listToFil
 from time import sleep
 from collections import OrderedDict
 from pathlib import Path
+import xml.etree.ElementTree as etree
+from xml.dom import minidom
 
 # Make sure directories exist
 if not os.path.exists("Output"):
@@ -31,6 +33,9 @@ C3_CHEMICALS_FILE = INPUT_DIR / "c3_chemicals.json"
 STRUCTURES_FILE = STRUCTURE_DIR / "structures.pkl" # The database file. Must be placed in proper location
 SENSIBLE_STRUCTURES_FILE = STRUCTURE_DIR / "sensible_structures.pkl" # Output only, not required
 
+CSV_FILE = STRUCTURE_DIR / "sensible_structures.csv"
+XML_FILE = STRUCTURE_DIR / "sensible_structures.xml"
+
 # Output Files
 DETAILS_FILE = OUTPUT_DIR / "details.txt"
 SENSIBLE_DETAILS_FILE = OUTPUT_DIR / "sensible_details.txt"
@@ -47,7 +52,7 @@ UNKNOWN_FREQUENCY_CSV_FILE = OUTPUT_DIR / "unknown_frequency.csv"
 PENDING_FREQUENCY_CSV_FILE = OUTPUT_DIR / "pending_frequency.csv"
 SET_FREQUENCY_CSV_FILE = OUTPUT_DIR / "set_frequency.csv"
 
-CSV_FILE = OUTPUT_DIR / "sensible_structures.csv"
+
 COMPRESSED_DICTIONARY_FILE = OUTPUT_DIR / "compressed_dictionary.json"
 
 # Load lists and dictionaries from files
@@ -627,6 +632,28 @@ class Structure:
                             runAgain = True
                             break
 
+    def getXml(self):
+        """Returns an elementTree tree root of the structure object"""
+        root = etree.Element("structure")
+
+        etree.SubElement(root, "pdbid").text = self.pdbid
+        etree.SubElement(root, "pmcid").text = str(self.pmcid)
+        etree.SubElement(root, "details").text = str(self.details)
+        compoundsTag = etree.SubElement(root, "compounds")
+        for i in range(0, len(self.compounds), 2):
+            compoundTag = etree.SubElement(compoundsTag, "compound")
+            etree.SubElement(compoundTag, "name").text = str(self.compounds[i])
+            etree.SubElement(compoundTag, "concentration").text = str(self.compounds[i+1])
+        etree.SubElement(root, "pH").text = str(self.pH)
+        etree.SubElement(root, "temperature").text = str(self.temperature)
+        etree.SubElement(root, "method").text = str(self.method)
+        etree.SubElement(root, "resolution").text = str(self.resolution)
+        sequencesTag = etree.SubElement(root, "sequences")
+        for s in self.sequences:
+            etree.SubElement(sequencesTag, "sequence").text = s
+
+        return root
+
     def hasUnknown(self): # boolean
         """returns True if the structure has a compound in the unknownList"""
         for compound in self.compounds[::2]:
@@ -969,14 +996,12 @@ def exportOutputFiles(structureList):
     unknownFrequency = getCompoundFrequencies(structureList, textFilename=UNKNOWN_FREQUENCY_FILE, csvFilename=UNKNOWN_FREQUENCY_CSV_FILE, mode="unknown")
     pendingFrequency = getCompoundFrequencies(structureList, textFilename=PENDING_FREQUENCY_FILE, csvFilename=PENDING_FREQUENCY_CSV_FILE, mode="pending")
     setFrequency = getSetFrequencies(sensibleStructureList, textFilename=SET_FREQUENCY_FILE, csvFilename=SET_FREQUENCY_CSV_FILE)
-    try:
-        exportCsv(sensibleStructureList, filename=CSV_FILE)
-    except PermissionError:
-        print("Could not write to {}. Maybe the file is open in another program such as Excel?".format(CSV_FILE))
+    exportXml(sensibleStructureList, XML_FILE)
+    exportCsv(sensibleStructureList, CSV_FILE)
 
-def exportCsv(structureList, filename):
+def exportCsv(structureList, outputFilename):
     """Exports a csv file of all of the information in a list of structures"""
-    print("Exporting csv file to {}...".format(filename))
+    print("Exporting csv file to {}...".format(outputFilename))
     outputList = []
     for structure in structureList:
         row = [str(structure.pdbid), str(structure.pmcid), str(structure.method).replace(',',''), str(structure.resolution), str(structure.temperature), str(structure.pH)]
@@ -991,10 +1016,30 @@ def exportCsv(structureList, filename):
             row.append(sequence)
         outputList.append(row)
 
-    with open(filename, 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile, dialect='excel-tab', delimiter="\t")
-        writer.writerows(outputList)
+    try:
+        with open(outputFilename, 'w', newline='') as csvfile:
+            writer = csv.writer(csvfile, dialect='excel-tab', delimiter="\t")
+            writer.writerows(outputList)
+    except PermissionError:
+        print("Could not write to {}. Maybe the file is open in another program such as Excel?".format(outputFilename))
 
+def exportXml(structureList, outputFilename):
+    """Exports a list of structures to an xml file"""
+    print("Exporting xml structure list to {}...".format(outputFilename))
+    root = etree.Element("structures")
+    for s in structureList:
+        root.append(s.getXml())
+
+    xmlString = minidom.parseString(etree.tostring(root)).toprettyxml(indent="   ")
+    xmlLineList = xmlString.split("\n")
+
+    try:
+        with open(outputFilename, "w") as f:
+            for line in xmlLineList:
+                f.write(line)
+                f.write("\n")
+    except MemoryError:
+        print("ERROR: Not enough memory availible to export xml to {}".format(outputFilename))
 
 def getDatabaseSubset(structureList, pdbidList, sensibleOnly=True, structureFile=None):
     """Takes a list of PDB IDs and returns a list of structure files associated with them
@@ -1158,4 +1203,4 @@ if __name__ == "__main__":
     # print("Number of PEG compounds: {}".format(count))
 
     # Debug parseDetails
-    # getStructure(structureList, "7ICE").parseDetails(debug=True)
+    # getStructure(structureList, "3NNQ").parseDetails(debug=True)
