@@ -1136,13 +1136,8 @@ def wordReplacement(s, replacementDictionary, debug=False):
 def loadStructures(structureFile=STRUCTURES_FILE): # list
     """Returns a list of structures from the pickled structure file"""
     print("Loading structures from file {}...".format(structureFile))
-    try:
-        with open(structureFile, "rb") as f:
-            return pickle.load(open(structureFile, "rb"))
-    except FileNotFoundError as e:
-        traceback.print_tb(e.__traceback__)
-        print("ERROR: Structure file {} not found".format())
-        sys.exit()
+    with open(structureFile, "rb") as f:
+        return pickle.load(open(structureFile, "rb"))
 
 def writeStructures(structureList, structureFile, count=0):
     """Writes a list of structures to a pickle file

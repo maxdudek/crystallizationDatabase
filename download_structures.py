@@ -1,8 +1,9 @@
-import pickle, json, os, sys
+import pickle, json, os, sys, traceback
 import xml.etree.ElementTree as etree
 from pathlib import Path
 from pdb_crystal_database import loadStructures, writeStructures, getStructure, Structure
 from misc_functions import loadJson, writeJson
+from time import sleep
 
 try:
     import requests
@@ -21,6 +22,9 @@ STRUCTURE_DIR = Path("Structures/")
 WITHOUT_DETAILS_FILE = INPUT_DIR / "pdbs_without_details.json"
 STRUCTURES_FILE = STRUCTURE_DIR / "structures.pkl" # The database file. Must be placed in proper location
 
+structureList = []
+pdbsWithoutDetails = []
+
 def loadPdb(pdbid): # ElementTree root
     """Loads a pdbid as an xml file and returns the <root> branch"""
     try:
@@ -29,9 +33,6 @@ def loadPdb(pdbid): # ElementTree root
     except (requests.Timeout, requests.exceptions.ConnectionError):
         print("Request timeout on PDB: {}".format(pdbid))
         return None
-    except KeyboardInterrupt:
-        print("HTTP Request interrupted - exiting program")
-        sys.exit()
     root = etree.fromstring(response.content)
     if (root.find("record") != None):
         return root
@@ -40,7 +41,7 @@ def loadPdb(pdbid): # ElementTree root
         + str(pdbid)+"\n-----------------------------------------------\n")
         return None
 
-def fetchStructures(pdbList, structureFile=STRUCTURES_FILE, onlyDetails=True, ignorePdbsWithoutDetails=True, ignoreCompletedPdbs=True, saveFrequency=100): # list
+def fetchStructures(pdbList, structureFile=STRUCTURES_FILE, onlyDetails=True, ignorePdbsWithoutDetails=True, ignoreCompletedPdbs=True, saveFrequency=1000): # list
     """Takes a list of pdbids and creates Structure objects for them, outputing them to structureFile
     If onlyDetails is True the function will only output Structures that have crystallization details
     If ignoreCompletedPdbs is True, then the function will read the Structure file and ignore Pdbs which already
@@ -50,10 +51,14 @@ def fetchStructures(pdbList, structureFile=STRUCTURES_FILE, onlyDetails=True, ig
     saveFrequency is the number of pdbs downloaded before the files are saved
         increasing this number makes the script faster, but more unsaved data is lost when the script is exited
     """
-    count = 1
-    structureList = []
+    global structureList
+    global pdbsWithoutDetails
 
+    count = 1
+
+    structureList = []
     pdbsWithoutDetails = []
+    
     try:
         print("Loading PDBs without details...")
         pdbsWithoutDetails = loadJson(WITHOUT_DETAILS_FILE)
@@ -83,6 +88,7 @@ def fetchStructures(pdbList, structureFile=STRUCTURES_FILE, onlyDetails=True, ig
         print("All PDBs have been ignored. No more PDBs need to be downloaded.")
 
     for pdbid in pdbList:
+        sleep(0.05) # Add delay to avoid sending too many requests
         if count == 1:
             print("Downloading {} structure objects from the pdb".format(len(pdbList)))
         if count % 100 == 0:
@@ -94,7 +100,6 @@ def fetchStructures(pdbList, structureFile=STRUCTURES_FILE, onlyDetails=True, ig
             if details == "null":
                 details = None
                 pdbsWithoutDetails.append(pdbid)
-                writeJson(pdbsWithoutDetails, WITHOUT_DETAILS_FILE)
             if details != None or not onlyDetails:
                 pmcid = root.find("record/dimStructure.pmc").text
                 if (pmcid != "null"):
@@ -128,6 +133,7 @@ def fetchStructures(pdbList, structureFile=STRUCTURES_FILE, onlyDetails=True, ig
                 if count % saveFrequency == 0:
                     # Save structures
                     writeStructures(structureList, structureFile)
+                    writeJson(pdbsWithoutDetails, WITHOUT_DETAILS_FILE)
 
     writeStructures(structureList, structureFile)
     print("Done fetching Structures")
@@ -146,7 +152,16 @@ def getAllPdbs(filename=""): # list
 
 if __name__ == "__main__":
     allPdbs = getAllPdbs()
-    fetchStructures(allPdbs)
+
+    try:
+        fetchStructures(allPdbs)
+    except (Exception, KeyboardInterrupt) as e:
+        # Print traceback
+        print(traceback.format_exc())
+        print("An error or keyboard interrupt was encountered. Saving downloaded data to disk...")
+        writeStructures(structureList, STRUCTURES_FILE)
+        writeJson(pdbsWithoutDetails, WITHOUT_DETAILS_FILE)
+        print("Done")
 
     # outputDictionary = {}
     # xmlroot = etree.parse('chemicals_c3.xml').getroot()
