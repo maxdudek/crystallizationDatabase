@@ -162,21 +162,3 @@ if __name__ == "__main__":
         writeStructures(structureList, STRUCTURES_FILE)
         writeJson(pdbsWithoutDetails, WITHOUT_DETAILS_FILE)
         print("Done")
-
-    # outputDictionary = {}
-    # xmlroot = etree.parse('chemicals_c3.xml').getroot()
-    # chemtag = xmlroot.find('chemicals')
-    # for c in chemtag.findall('chemical'):
-    #     singleDictionary = {}
-    #     classifications = []
-    #     names = []
-    #     name = c.get('name')
-    #     names.append(name)
-    #     for clas in c.findall('class'):
-    #         classifications.append(clas.text)
-    #     for n in c.findall('alias'):
-    #         names.append(n.text)
-    #     singleDictionary['names'] = names
-    #     singleDictionary['classifications'] = classifications
-    #     outputDictionary[name] = singleDictionary
-    # writeJson(outputDictionary, "Input\\c3_chemicals.json", indent=4)

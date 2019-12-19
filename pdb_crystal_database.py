@@ -27,7 +27,6 @@ LOWERCASE_REPLACEMENT_FILE = INPUT_DIR / "replacementLowercase.json"
 SENSITIVE_REPLACEMENT_FILE = INPUT_DIR / "replacementSensitive.json"
 MIXTURES_FILE = INPUT_DIR / "mixture_compounds.json"
 CLASSIFICATION_FILE = INPUT_DIR / "classification_dictionary.json"
-C3_CHEMICALS_FILE = INPUT_DIR / "c3_chemicals.json"
 
 # Structure Files - serialized binary files containing a list of Structure objects
 STRUCTURES_FILE = STRUCTURE_DIR / "structures.pkl" # The database file. Must be placed in proper location
@@ -64,7 +63,6 @@ try:
     lowercaseReplacement = loadJson(LOWERCASE_REPLACEMENT_FILE, object_pairs_hook=OrderedDict)
     sensitiveReplacement = loadJson(SENSITIVE_REPLACEMENT_FILE, object_pairs_hook=OrderedDict)
     mixturesDictionary = loadJson(MIXTURES_FILE)
-    c3Chemicals = loadJson(C3_CHEMICALS_FILE)
     classificationDictionary = loadJson(CLASSIFICATION_FILE)
     STOP_WORDS = set(loadJson(STOP_WORDS_FILE)) - {'m'} - {'am'}
 except FileNotFoundError as notFound:
@@ -781,10 +779,6 @@ def updateMiscDictionaries(): # void
     for compound in set(compoundDictionary.values()):
         if compound not in classificationDictionary:
             classificationDictionary[compound] = []
-            for c3Compound in c3Chemicals: # Check C3 chemicals for classification
-                if getKey(compound) in [getKey(s) for s in c3Chemicals[c3Compound]['names']]:
-                    classificationDictionary[compound] = c3Chemicals[c3Compound]['classifications']
-                    break
 
     # Remove mixture compounds from dictionaries
     for compound in set(compoundDictionary.values()):
