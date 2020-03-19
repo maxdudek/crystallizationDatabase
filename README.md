@@ -17,6 +17,6 @@ For more details and results from the 2018 summer project, see the project poste
 
 For more information on how to use the package see the [Wiki](https://github.com/maxdudek/crystallizationDatabase/wiki).
 
-Contact Max Dudek at max.dudek@pitt.edu if you have any questions.
+Contact Sarah Bowman at sbowman@hwi.buffalo.edu or Max Dudek at max.dudek@pitt.edu if you have any questions.
 
 \* The database file is too large to include in the repository. See the Wiki for more information about downloading it.
