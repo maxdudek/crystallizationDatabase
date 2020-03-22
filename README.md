@@ -19,4 +19,4 @@ For more information on how to use the package see the [Wiki](https://github.com
 
 Contact Sarah Bowman at sbowman@hwi.buffalo.edu or Max Dudek at max.dudek@pitt.edu if you have any questions.
 
-\* The database file is too large to include directly in the repository, but can be downloaded from [https://github.com/Hauptman-Woodward/crystallizationDatabase/tree/master/Structures Structure directory] using the github large file storage repository.
+\* The database file is too large to include directly in the repository, but can be downloaded from the [Structure directory](https://github.com/Hauptman-Woodward/crystallizationDatabase/tree/master/Structures Structure directory) using the github large file storage extension.
