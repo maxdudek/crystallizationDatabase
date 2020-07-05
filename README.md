@@ -19,4 +19,4 @@ For more information on how to use the package see the [Wiki](https://github.com
 
 Contact Sarah Bowman at sbowman@hwi.buffalo.edu or Max Dudek at max.dudek@pitt.edu if you have any questions.
 
-\* The database file is too large to include directly in the repository, but can be downloaded from the Structure directory using the github large file storage extension.
+\* The database file is too large to include directly in the repository, but can be downloaded from the data repository Zenodo (doi: 10.5281/zenodo.3931013). Previously these data were available from the Structure directory using the github large file storage extension, but bandwidth limitations limit the number of downloads that can occur, so we have mirrored the data to the Zenodo repository.
